@@ -22,7 +22,6 @@ export default function Home() {
       .single();
 
     if (error) {
-      console.log(error);
       setError("Nomor resi tidak ditemukan");
     } else {
       setResult(data);
@@ -45,7 +44,7 @@ export default function Home() {
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {result && (
-        <div style={{ marginTop: "20px" }}>
+        <div style={{ marginTop: 20 }}>
           <p><b>Tracking Number:</b> {result.tracking_number}</p>
           <p><b>Nomor Surat Jalan:</b> {result.nomor_surat_jalan}</p>
           <p><b>Tanggal Surat Jalan:</b> {result.tgl_surat_jalan}</p>
