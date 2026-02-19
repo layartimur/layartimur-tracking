@@ -11,22 +11,25 @@ export default function Home() {
   const [tracking, setTracking] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
+
 const handleCheck = async () => {
   setError("");
   setResult(null);
 
   const { data, error } = await supabase
-    .from("PENGIRIMAN") // ← GANTI DI SINI
+    .from("PENGIRIMAN") // ← UBAH DI SINI
     .select("*")
-    .eq("tracking_number", tracking)
+    .eq("tracking_number", tracking.trim())
     .single();
 
   if (error) {
+    console.log(error);
     setError("Nomor resi tidak ditemukan");
   } else {
     setResult(data);
   }
 };
+
   return (
     <div style={{ padding: 40 }}>
       <h1>Tracking Pengiriman</h1>
