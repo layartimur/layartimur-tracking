@@ -46,13 +46,17 @@ const handleCheck = async () => {
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {result && (
-        <div style={{ marginTop: 20 }}>
-          <p><strong>Nama:</strong> {result.customer_name}</p>
-          <p><strong>Status:</strong> {result.status}</p>
-          <p><strong>Tagihan:</strong> Rp {result.amount_due}</p>
-          <p><strong>Pembayaran:</strong> {result.payment_status}</p>
-        </div>
-      )}
-    </div>
-  );
-}
+  <div style={{ marginTop: "20px" }}>
+    <p><b>Tracking Number:</b> {result.tracking_number}</p>
+    <p><b>Nomor Surat Jalan:</b> {result.nomor_surat_jalan}</p>
+    <p><b>Tanggal Surat Jalan:</b> {result.tgl_surat_jalan}</p>
+    <p><b>Berat:</b> {result.berat}</p>
+    <p><b>Nama Pelanggan:</b> {result.nama_pelanggan}</p>
+    <p><b>Alamat:</b> {result.alamat}</p>
+    <p><b>No Telpon:</b> {result.no_telpon}</p>
+    <p><b>Nama Barang:</b> {result.nama_barang}</p>
+    <p><b>Jumlah Barang:</b> {result.jumlah_barang}</p>
+    <p><b>Status Pengiriman:</b> {result.status_pengiriman}</p>
+  </div>
+)}
+
