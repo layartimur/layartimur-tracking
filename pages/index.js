@@ -58,5 +58,6 @@ const handleCheck = async () => {
     <p><b>Jumlah Barang:</b> {result.jumlah_barang}</p>
     <p><b>Status Pengiriman:</b> {result.status_pengiriman}</p>
   </div>
-)}
+);
+}
 
