@@ -43,20 +43,59 @@ export default function Home() {
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {result && (
-        <div style={{ marginTop: 20 }}>
-          <p><b>Tracking Number:</b> {result.tracking_number}</p>
-          <p><b>Nomor Surat Jalan:</b> {result.nomor_surat_jalan}</p>
-          <p><b>Tanggal Surat Jalan:</b> {result.tgl_surat_jalan}</p>
-          <p><b>Berat:</b> {result.berat}</p>
-          <p><b>Nama Pelanggan:</b> {result.nama_pelanggan}</p>
-          <p><b>Alamat:</b> {result.alamat}</p>
-          <p><b>No Telpon:</b> {result.no_telpon}</p>
-          <p><b>Nama Barang:</b> {result.nama_barang}</p>
-          <p><b>Jumlah Barang:</b> {result.jumlah_barang}</p>
-          <p><b>Status Pengiriman:</b> {result.status_pengiriman}</p>
-        </div>
-      )}
-    </div>
-  );
+     {result && (
+  <div style={{ marginTop: 30 }}>
+    <table
+      style={{
+        width: "100%",
+        borderCollapse: "collapse",
+      }}
+      border="1"
+      cellPadding="10"
+    >
+      <tbody>
+        <tr>
+          <th align="left">Tracking Number</th>
+          <td>{result.tracking_number}</td>
+        </tr>
+        <tr>
+          <th align="left">Nomor Surat Jalan</th>
+          <td>{result.nomor_surat_jalan}</td>
+        </tr>
+        <tr>
+          <th align="left">Tanggal Surat Jalan</th>
+          <td>{result.tgl_surat_jalan}</td>
+        </tr>
+        <tr>
+          <th align="left">Berat</th>
+          <td>{result.berat}</td>
+        </tr>
+        <tr>
+          <th align="left">Nama Pelanggan</th>
+          <td>{result.nama_pelanggan}</td>
+        </tr>
+        <tr>
+          <th align="left">Alamat</th>
+          <td>{result.alamat}</td>
+        </tr>
+        <tr>
+          <th align="left">No Telpon</th>
+          <td>{result.no_telpon}</td>
+        </tr>
+        <tr>
+          <th align="left">Nama Barang</th>
+          <td>{result.nama_barang}</td>
+        </tr>
+        <tr>
+          <th align="left">Jumlah Barang</th>
+          <td>{result.jumlah_barang}</td>
+        </tr>
+        <tr>
+          <th align="left">Status Pengiriman</th>
+          <td>{result.status_pengiriman}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+);
 }
