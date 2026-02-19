@@ -43,59 +43,54 @@ export default function Home() {
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-     {result && (
-  <div style={{ marginTop: 30 }}>
-    <table
-      style={{
-        width: "100%",
-        borderCollapse: "collapse",
-      }}
-      border="1"
-      cellPadding="10"
-    >
-      <tbody>
-        <tr>
-          <th align="left">Tracking Number</th>
-          <td>{result.tracking_number}</td>
-        </tr>
-        <tr>
-          <th align="left">Nomor Surat Jalan</th>
-          <td>{result.nomor_surat_jalan}</td>
-        </tr>
-        <tr>
-          <th align="left">Tanggal Surat Jalan</th>
-          <td>{result.tgl_surat_jalan}</td>
-        </tr>
-        <tr>
-          <th align="left">Berat</th>
-          <td>{result.berat}</td>
-        </tr>
-        <tr>
-          <th align="left">Nama Pelanggan</th>
-          <td>{result.nama_pelanggan}</td>
-        </tr>
-        <tr>
-          <th align="left">Alamat</th>
-          <td>{result.alamat}</td>
-        </tr>
-        <tr>
-          <th align="left">No Telpon</th>
-          <td>{result.no_telpon}</td>
-        </tr>
-        <tr>
-          <th align="left">Nama Barang</th>
-          <td>{result.nama_barang}</td>
-        </tr>
-        <tr>
-          <th align="left">Jumlah Barang</th>
-          <td>{result.jumlah_barang}</td>
-        </tr>
-        <tr>
-          <th align="left">Status Pengiriman</th>
-          <td>{result.status_pengiriman}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-);
+           {result && (
+        <div style={{ marginTop: 20 }}>
+          <table border="1" cellPadding="8">
+            <tbody>
+              <tr>
+                <td>Tracking Number</td>
+                <td>{result.tracking_number}</td>
+              </tr>
+              <tr>
+                <td>Nomor Surat Jalan</td>
+                <td>{result.nomor_surat_jalan}</td>
+              </tr>
+              <tr>
+                <td>Tanggal Surat Jalan</td>
+                <td>{result.tgl_surat_jalan}</td>
+              </tr>
+              <tr>
+                <td>Berat</td>
+                <td>{result.berat}</td>
+              </tr>
+              <tr>
+                <td>Nama Pelanggan</td>
+                <td>{result.nama_pelanggan}</td>
+              </tr>
+              <tr>
+                <td>Alamat</td>
+                <td>{result.alamat}</td>
+              </tr>
+              <tr>
+                <td>No Telpon</td>
+                <td>{result.no_telpon}</td>
+              </tr>
+              <tr>
+                <td>Nama Barang</td>
+                <td>{result.nama_barang}</td>
+              </tr>
+              <tr>
+                <td>Jumlah Barang</td>
+                <td>{result.jumlah_barang}</td>
+              </tr>
+              <tr>
+                <td>Status Pengiriman</td>
+                <td>{result.status_pengiriman}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 }
