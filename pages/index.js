@@ -16,7 +16,7 @@ const handleCheck = async () => {
   setResult(null);
 
   const { data, error } = await supabase
-    .from("shipments")
+    .from("PENGIRIMAN") // ← GANTI DI SINI
     .select("*")
     .eq("tracking_number", tracking)
     .single();
@@ -27,7 +27,6 @@ const handleCheck = async () => {
     setResult(data);
   }
 };
-
   return (
     <div style={{ padding: 40 }}>
       <h1>Tracking Pengiriman</h1>
