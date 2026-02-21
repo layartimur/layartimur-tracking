@@ -9,10 +9,15 @@ const supabase = createClient(
 
 export default function Admin() {
   const router = useRouter();
+
+  // ===== STATE =====
   const [tracking, setTracking] = useState("");
   const [nama, setNama] = useState("");
   const [status, setStatus] = useState("Diproses");
+  const [tanggalSampai, setTanggalSampai] = useState("");
+  const [statusPembayaran, setStatusPembayaran] = useState("Belum Lunas");
 
+  // ===== CEK LOGIN =====
   useEffect(() => {
     checkUser();
   }, []);
@@ -24,16 +29,36 @@ export default function Admin() {
     }
   };
 
+  // ===== INSERT DATA =====
   const handleInsert = async () => {
-    await supabase.from("PENGIRIMAN").insert([
+    if (!tracking || !nama) {
+      alert("Tracking dan Nama wajib diisi");
+      return;
+    }
+
+    const { error } = await supabase.from("PENGIRIMAN").insert([
       {
         tracking_number: tracking,
         nama_pelanggan: nama,
         status_pengiriman: status,
+        tanggal_sampai: tanggalSampai || null,
+        status_pembayaran: statusPembayaran,
       },
     ]);
 
-    alert("Data berhasil ditambahkan");
+    if (error) {
+      alert("Gagal menyimpan data");
+      console.log(error);
+    } else {
+      alert("Data berhasil ditambahkan");
+
+      // reset form
+      setTracking("");
+      setNama("");
+      setStatus("Diproses");
+      setTanggalSampai("");
+      setStatusPembayaran("Belum Lunas");
+    }
   };
 
   return (
@@ -42,22 +67,42 @@ export default function Admin() {
         <h2>Dashboard Admin</h2>
 
         <input
+          type="text"
           placeholder="Tracking Number"
+          value={tracking}
           onChange={(e) => setTracking(e.target.value)}
         />
 
         <input
+          type="text"
           placeholder="Nama Pelanggan"
+          value={nama}
           onChange={(e) => setNama(e.target.value)}
         />
 
-        <select onChange={(e) => setStatus(e.target.value)}>
-          <option>Diproses</option>
-          <option>Dikirim</option>
-          <option>Sampai</option>
+        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="Diproses">Diproses</option>
+          <option value="Dikirim">Dikirim</option>
+          <option value="Sampai">Sampai</option>
         </select>
 
-        <button onClick={handleInsert}>Tambah Resi</button>
+        <input
+          type="date"
+          value={tanggalSampai}
+          onChange={(e) => setTanggalSampai(e.target.value)}
+        />
+
+        <select
+          value={statusPembayaran}
+          onChange={(e) => setStatusPembayaran(e.target.value)}
+        >
+          <option value="Belum Lunas">Belum Lunas</option>
+          <option value="Lunas">Lunas</option>
+        </select>
+
+        <button onClick={handleInsert}>
+          Simpan Data
+        </button>
       </div>
     </div>
   );
