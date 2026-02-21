@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "next/router";
+import dynamic from "next/dynamic";
 import * as XLSX from "xlsx";
 
+// ===== CHARTJS CORE =====
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,8 +15,6 @@ import {
   Legend,
 } from "chart.js";
 
-import { Bar, Doughnut } from "react-chartjs-2";
-
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -24,6 +24,18 @@ ChartJS.register(
   Legend
 );
 
+// ===== FIX VERCEL SSR ERROR =====
+const Bar = dynamic(
+  () => import("react-chartjs-2").then((mod) => mod.Bar),
+  { ssr: false }
+);
+
+const Doughnut = dynamic(
+  () => import("react-chartjs-2").then((mod) => mod.Doughnut),
+  { ssr: false }
+);
+
+// ===== SUPABASE =====
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -55,7 +67,7 @@ export default function Admin() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // ================= AUTH CHECK =================
+  // ================= AUTH =================
   useEffect(() => {
     checkUser();
   }, []);
@@ -66,9 +78,7 @@ export default function Admin() {
 
   const checkUser = async () => {
     const { data } = await supabase.auth.getUser();
-    if (!data.user) {
-      router.push("/login");
-    }
+    if (!data.user) router.push("/login");
   };
 
   // ================= INSERT / UPDATE =================
@@ -121,19 +131,19 @@ export default function Admin() {
     }
 
     const { data, error } = await query;
-    if (error) return;
+    if (error || !data) return;
 
-    // ===== SUMMARY =====
     const totalResi = data.length;
     const totalLunas = data.filter(d => d.status_pembayaran === "Lunas").length;
     const totalPending = data.filter(d => d.status_pembayaran === "Belum Lunas").length;
+
     const totalOmzet = data
       .filter(d => d.status_pembayaran === "Lunas")
       .reduce((acc, curr) => acc + (Number(curr.total_harga) || 0), 0);
 
     setSummary({ totalResi, totalLunas, totalPending, totalOmzet });
 
-    // ===== STATUS CHART =====
+    // STATUS
     const diproses = data.filter(d => d.status_pengiriman === "Diproses").length;
     const dikirim = data.filter(d => d.status_pengiriman === "Dikirim").length;
     const sampai = data.filter(d => d.status_pengiriman === "Sampai").length;
@@ -147,7 +157,7 @@ export default function Admin() {
       }]
     });
 
-    // ===== PEMBAYARAN CHART =====
+    // PEMBAYARAN
     setChartPembayaran({
       labels: ["Lunas", "Belum Lunas"],
       datasets: [{
@@ -156,13 +166,12 @@ export default function Admin() {
       }]
     });
 
-    // ===== BULANAN CHART =====
+    // BULANAN
     const monthly = {};
     data.forEach(item => {
       const month = item.tgl_surat_jalan?.substring(0, 7);
       if (!month) return;
-      if (!monthly[month]) monthly[month] = 0;
-      monthly[month]++;
+      monthly[month] = (monthly[month] || 0) + 1;
     });
 
     setChartBulanan({
@@ -175,14 +184,12 @@ export default function Admin() {
     });
   };
 
-  // ================= EXPORT EXCEL =================
+  // ================= EXPORT =================
   const handleExport = async () => {
     const { data } = await supabase.from("PENGIRIMAN").select("*");
-
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    const worksheet = XLSX.utils.json_to_sheet(data || []);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Tracking");
-
     XLSX.writeFile(workbook, "Data_Tracking_Layar_Timur.xlsx");
   };
 
@@ -217,7 +224,7 @@ export default function Admin() {
 
         <hr style={{ margin:"40px 0" }}/>
 
-        {/* FORM INPUT */}
+        {/* FORM */}
         <input value={tracking} placeholder="Tracking" onChange={(e)=>setTracking(e.target.value)} />
         <input value={nama} placeholder="Nama Pelanggan" onChange={(e)=>setNama(e.target.value)} />
         <input value={totalHarga} type="number" placeholder="Total Harga" onChange={(e)=>setTotalHarga(e.target.value)} />
