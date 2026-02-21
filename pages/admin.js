@@ -39,21 +39,19 @@ export default function Admin() {
   const { error } = await supabase
     .from("PENGIRIMAN")
     .upsert(
-      [
-        {
-          tracking_number: tracking,
-          nama_pelanggan: nama,
-          status_pengiriman: status,
-          tanggal_sampai: tanggalSampai || null,
-          status_pembayaran: statusPembayaran,
-        },
-      ],
-      { onConflict: "tracking_number" } // ini penting
+      [{
+        tracking_number: tracking,
+        nama_pelanggan: nama,
+        status_pengiriman: status,
+        tanggal_sampai: tanggalSampai || null,
+        status_pembayaran: statusPembayaran
+      }],
+      { onConflict: "tracking_number" }
     );
 
   if (error) {
-    alert("Gagal menyimpan data");
     console.log(error);
+    alert(error.message);
   } else {
     alert("Data berhasil disimpan / diupdate");
 
