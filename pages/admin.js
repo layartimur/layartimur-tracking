@@ -31,35 +31,39 @@ export default function Admin() {
 
   // ===== INSERT DATA =====
   const handleInsert = async () => {
-    if (!tracking || !nama) {
-      alert("Tracking dan Nama wajib diisi");
-      return;
-    }
+  if (!tracking || !nama) {
+    alert("Tracking dan Nama wajib diisi");
+    return;
+  }
 
-    const { error } = await supabase.from("PENGIRIMAN").insert([
-      {
-        tracking_number: tracking,
-        nama_pelanggan: nama,
-        status_pengiriman: status,
-        tanggal_sampai: tanggalSampai || null,
-        status_pembayaran: statusPembayaran,
-      },
-    ]);
+  const { error } = await supabase
+    .from("PENGIRIMAN")
+    .upsert(
+      [
+        {
+          tracking_number: tracking,
+          nama_pelanggan: nama,
+          status_pengiriman: status,
+          tanggal_sampai: tanggalSampai || null,
+          status_pembayaran: statusPembayaran,
+        },
+      ],
+      { onConflict: "tracking_number" } // ini penting
+    );
 
-    if (error) {
-      alert("Gagal menyimpan data");
-      console.log(error);
-    } else {
-      alert("Data berhasil ditambahkan");
+  if (error) {
+    alert("Gagal menyimpan data");
+    console.log(error);
+  } else {
+    alert("Data berhasil disimpan / diupdate");
 
-      // reset form
-      setTracking("");
-      setNama("");
-      setStatus("Diproses");
-      setTanggalSampai("");
-      setStatusPembayaran("Belum Lunas");
-    }
-  };
+    setTracking("");
+    setNama("");
+    setStatus("Diproses");
+    setTanggalSampai("");
+    setStatusPembayaran("Belum Lunas");
+  }
+};
 
   return (
     <div className="container">
