@@ -44,6 +44,10 @@ export default function Home() {
   const normalizeStatus = (status) =>
     status?.trim().toLowerCase() || "";
 
+  const formatRupiah = (value) => {
+    return "Rp " + Number(value || 0).toLocaleString("id-ID");
+  };
+
   return (
     <div className="container">
       <div className="card">
@@ -141,6 +145,22 @@ export default function Home() {
                     {result.status_pembayaran || "-"}
                   </td>
                 </tr>
+
+                <tr>
+                  <td>Total Harga</td>
+                  <td
+                    style={{
+                      color:
+                        result.status_pembayaran === "Lunas"
+                          ? "green"
+                          : "black",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {formatRupiah(result.total_harga)}
+                  </td>
+                </tr>
+
               </tbody>
             </table>
           </>
