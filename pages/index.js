@@ -12,32 +12,35 @@ export default function Home() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleCheck = async () => {
-    setError("");
-    setResult(null);
-    setLoading(true);
+const handleCheck = async () => {
+  setError("");
+  setResult(null);
+  setLoading(true);
 
-    const { data, error } = await supabase
-      .from("PENGIRIMAN")
-      .select("*")
-      .eq("tracking_number", tracking.trim())
-      .single();
+  const { data, error } = await supabase
+    .from("PENGIRIMAN")
+    .select("*")
+    .eq("tracking_number", tracking.trim())
+    .single();
 
-    setLoading(false);
-
-    if (error || !data) {
+  setTimeout(() => {
+    if (error) {
       setError("Nomor resi tidak ditemukan");
     } else {
       setResult(data);
     }
-  };
+    setLoading(false);
+  }, 800); // delay biar animasi terlihat
+};
 
-  const getProgress = (status) => {
-    if (status === "Diproses") return "33%";
-    if (status === "Dikirim") return "66%";
-    if (status === "Sampai") return "100%";
-    return "0%";
-  };
+const getProgress = (status) => {
+  const s = status?.trim().toLowerCase();
+
+  if (s === "diproses") return "33%";
+  if (s === "dikirim") return "66%";
+  if (s === "sampai") return "100%";
+  return "0%";
+};
 
   return (
     <div className="container">
@@ -58,12 +61,12 @@ export default function Home() {
           <button onClick={handleCheck}>Cek</button>
         </div>
 
-        {loading && (
-          <div className="loading">
-            <div className="spinner"></div>
-            <p>Mencari data...</p>
-          </div>
-        )}
+       {loading && (
+  <div style={{ marginTop: 20 }}>
+    <div className="spinner"></div>
+    <p>Memproses tracking...</p>
+  </div>
+)}
 
         {error && <p className="error">{error}</p>}
 
@@ -76,17 +79,23 @@ export default function Home() {
               ></div>
             </div>
 
-            <div className="timeline">
-              <div className={`step ${result.status_pengiriman !== "" ? "active" : ""}`}>
-                Diproses
-              </div>
-              <div className={`step ${result.status_pengiriman === "Dikirim" || result.status_pengiriman === "Sampai" ? "active" : ""}`}>
-                Dikirim
-              </div>
-              <div className={`step ${result.status_pengiriman === "Sampai" ? "active" : ""}`}>
-                Sampai
-              </div>
-            </div>
+           <div className="timeline">
+  <div className={`step ${result.status_pengiriman?.toLowerCase() === "diproses" ? "active" : ""}`}>
+    Diproses
+  </div>
+
+  <div className={`step ${
+    ["dikirim","sampai"].includes(result.status_pengiriman?.toLowerCase())
+      ? "active"
+      : ""
+  }`}>
+    Dikirim
+  </div>
+
+  <div className={`step ${result.status_pengiriman?.toLowerCase() === "sampai" ? "active" : ""}`}>
+    Sampai
+  </div>
+</div>
 
             <table>
               <tbody>
