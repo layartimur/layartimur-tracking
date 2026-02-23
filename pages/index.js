@@ -13,8 +13,12 @@ export default function Home() {
     }}>
       
       <img src="/logo.png" width="120" alt="Logo" />
-      <h1 style={{ marginTop: 20 }}>PT Layar Timur</h1>
-      <p style={{ marginBottom: 40 }}>Solusi Pengiriman Cepat & Aman</p>
+<h1 style={{ marginTop: 20, fontSize: 36, fontWeight: "bold" }}>
+  Layar Timur Express
+</h1>
+<p style={{ marginBottom: 40, fontSize: 18, color: "#555" }}>
+  Solusi Pengiriman Cepat, Aman & Terpercaya
+</p>
 
       <div style={{
         display: "flex",
