@@ -103,7 +103,7 @@ export default function Home() {
       }}>
 
         <div style={{ textAlign: "center", marginBottom: 30 }}>
-          <img src="/logo.png" width="120" />
+          <img src="/logo-tracking.png" width="120" />
           <h2 style={{ marginTop: 15 }}>Tracking Layar Timur</h2>
         </div>
 
