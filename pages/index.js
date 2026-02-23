@@ -17,7 +17,7 @@ export default function Home() {
   Layar Timur Express
 </h1>
 <p style={{ marginBottom: 40, fontSize: 18, color: "#555" }}>
-  Solusi Pengiriman Cepat, Aman & Terpercaya
+  Mengantar Kepercayaan
 </p>
 
       <div style={{
