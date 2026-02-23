@@ -1,117 +1,268 @@
-body {
+/* ================= GLOBAL ================= */
+
+* {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f3f4f6;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
 }
 
-.container {
-  min-height: 100vh;
+body {
+  background: #0f172a;
+  overflow-x: hidden;
+}
+
+/* ================= LOADING ================= */
+
+.loadingScreen {
+  height: 100vh;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-}
-
-.card {
-  background: white;
-  padding: 30px;
-  border-radius: 15px;
-  width: 100%;
-  max-width: 700px;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.08);
-}
-
-.logoBox {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.searchBox {
-  display: flex;
-  gap: 10px;
-}
-
-input {
-  flex: 1;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-}
-
-button {
-  padding: 12px 20px;
-  background: #2563eb;
+  background: #0f172a;
   color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
 }
 
-button:hover {
-  background: #1e40af;
-}
-
-.error {
-  color: red;
-  margin-top: 15px;
-}
-
-.loading {
-  text-align: center;
-  margin-top: 20px;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #eee;
-  border-top: 4px solid #2563eb;
+.loaderPremium {
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
+  border: 6px solid rgba(255,255,255,0.2);
+  border-top: 6px solid #38bdf8;
   animation: spin 1s linear infinite;
-  margin: auto;
 }
 
 @keyframes spin {
   100% { transform: rotate(360deg); }
 }
 
-.progressContainer {
-  height: 8px;
-  background: #e5e7eb;
-  border-radius: 5px;
-  margin-top: 25px;
+/* ================= HERO BACKGROUND (IMAGE VERSION) ================= */
+
+.heroPremium {
+  min-height: 100vh;
+  background:
+    linear-gradient(rgba(15,23,42,0.75), rgba(15,23,42,0.75)),
+    url('/ntt-map.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
 }
 
-.progressBar {
-  height: 8px;
-  background: #16a34a;
-  border-radius: 5px;
+/* Soft cinematic glow */
+.heroPremium::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.05), transparent 70%);
+  pointer-events: none;
 }
 
-.timeline {
+/* ================= NAVBAR ================= */
+
+.navbarPremium {
+  width: 100%;
+  padding: 20px 60px;
+  position: fixed;
+  top: 0;
   display: flex;
   justify-content: space-between;
-  margin-top: 10px;
+  align-items: center;
+  transition: 0.3s;
+  z-index: 1000;
 }
 
-.step {
-  flex: 1;
-  text-align: center;
-  padding: 5px;
-  color: #999;
+.navbarPremium.scrolled {
+  background: rgba(15,23,42,0.85);
+  backdrop-filter: blur(15px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-.step.active {
-  color: #16a34a;
+.logoPremium {
+  color: white;
   font-weight: bold;
+  font-size: 20px;
 }
 
-table {
+.navLinksPremium {
+  display: flex;
+  gap: 35px;
+}
+
+.navLinksPremium a {
+  color: white;
+  text-decoration: none;
+  position: relative;
+  font-weight: 500;
+}
+
+.navLinksPremium a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  width: 0;
+  height: 2px;
+  background: #38bdf8;
+  transition: 0.3s;
+}
+
+.navLinksPremium a:hover::after {
   width: 100%;
-  margin-top: 25px;
-  border-collapse: collapse;
 }
 
-td {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
+/* ================= HAMBURGER ================= */
+
+.hamburgerPremium {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.hamburgerPremium span {
+  width: 25px;
+  height: 3px;
+  background: white;
+  transition: 0.3s;
+}
+
+.hamburgerPremium.open span:nth-child(1) {
+  transform: rotate(45deg) translate(5px,5px);
+}
+
+.hamburgerPremium.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburgerPremium.open span:nth-child(3) {
+  transform: rotate(-45deg) translate(5px,-5px);
+}
+
+/* ================= HERO CARD ================= */
+
+.heroCardPremium {
+  margin-top: 150px;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(25px);
+  padding: 70px;
+  border-radius: 25px;
+  text-align: center;
+  color: white;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: 1s ease;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+
+.heroCardPremium.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.heroButtonsPremium {
+  margin-top: 30px;
+  display: flex;
+  gap: 25px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btnPrimaryPremium,
+.btnSecondaryPremium {
+  padding: 15px 35px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.btnPrimaryPremium {
+  background: #38bdf8;
+  color: #0f172a;
+}
+
+.btnSecondaryPremium {
+  background: #1e40af;
+  color: white;
+}
+
+.btnPrimaryPremium:hover,
+.btnSecondaryPremium:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+}
+
+/* ================= WHATSAPP ================= */
+
+.waPremium {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 65px;
+  height: 65px;
+  background: #25D366;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: white;
+  text-decoration: none;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(37,211,102,0.6); }
+  70% { box-shadow: 0 0 0 18px rgba(37,211,102,0); }
+  100% { box-shadow: 0 0 0 0 rgba(37,211,102,0); }
+}
+
+/* ================= FOOTER ================= */
+
+.footerPremium {
+  width: 100%;
+  padding: 60px;
+  background: #020617;
+  color: white;
+  text-align: center;
+  margin-top: 120px;
+}
+
+/* ================= MOBILE ================= */
+
+@media (max-width: 768px) {
+
+  .heroPremium {
+    background-attachment: scroll;
+  }
+
+  .navLinksPremium {
+    position: absolute;
+    top: 70px;
+    right: -100%;
+    flex-direction: column;
+    background: rgba(15,23,42,0.95);
+    width: 220px;
+    padding: 25px;
+    transition: 0.3s;
+  }
+
+  .navLinksPremium.active {
+    right: 20px;
+  }
+
+  .hamburgerPremium {
+    display: flex;
+  }
+
+  .heroCardPremium {
+    padding: 40px;
+  }
 }
