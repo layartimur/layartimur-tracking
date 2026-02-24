@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 import * as XLSX from "xlsx";
 
-// ===== CHARTJS CORE =====
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -24,7 +23,6 @@ ChartJS.register(
   Legend
 );
 
-// ===== FIX VERCEL SSR ERROR =====
 const Bar = dynamic(
   () => import("react-chartjs-2").then((mod) => mod.Bar),
   { ssr: false }
@@ -35,7 +33,6 @@ const Doughnut = dynamic(
   { ssr: false }
 );
 
-// ===== SUPABASE =====
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -44,7 +41,7 @@ const supabase = createClient(
 export default function Admin() {
   const router = useRouter();
 
-  // ================= FORM STATE =================
+  // ================= STATE =================
   const [tracking, setTracking] = useState("");
   const [nama, setNama] = useState("");
   const [status, setStatus] = useState("Diproses");
@@ -52,7 +49,6 @@ export default function Admin() {
   const [statusPembayaran, setStatusPembayaran] = useState("Belum Lunas");
   const [totalHarga, setTotalHarga] = useState("");
 
-  // ================= DASHBOARD STATE =================
   const [summary, setSummary] = useState({
     totalResi: 0,
     totalLunas: 0,
@@ -81,7 +77,7 @@ export default function Admin() {
     if (!data.user) router.push("/login");
   };
 
-  // ================= INSERT / UPDATE =================
+  // ================= INSERT =================
   const handleInsert = async () => {
     if (!tracking || !nama) {
       alert("Tracking dan Nama wajib diisi");
@@ -120,7 +116,7 @@ export default function Admin() {
     setTotalHarga("");
   };
 
-  // ================= LOAD DASHBOARD =================
+  // ================= LOAD =================
   const loadDashboard = async () => {
     let query = supabase.from("PENGIRIMAN").select("*");
 
@@ -143,7 +139,6 @@ export default function Admin() {
 
     setSummary({ totalResi, totalLunas, totalPending, totalOmzet });
 
-    // STATUS
     const diproses = data.filter(d => d.status_pengiriman === "Diproses").length;
     const dikirim = data.filter(d => d.status_pengiriman === "Dikirim").length;
     const sampai = data.filter(d => d.status_pengiriman === "Sampai").length;
@@ -151,13 +146,11 @@ export default function Admin() {
     setChartStatus({
       labels: ["Diproses", "Dikirim", "Sampai"],
       datasets: [{
-        label: "Status Pengiriman",
         data: [diproses, dikirim, sampai],
         backgroundColor: ["#f59e0b", "#3b82f6", "#16a34a"]
       }]
     });
 
-    // PEMBAYARAN
     setChartPembayaran({
       labels: ["Lunas", "Belum Lunas"],
       datasets: [{
@@ -166,7 +159,6 @@ export default function Admin() {
       }]
     });
 
-    // BULANAN
     const monthly = {};
     data.forEach(item => {
       const month = item.tgl_surat_jalan?.substring(0, 7);
@@ -195,57 +187,87 @@ export default function Admin() {
 
   // ================= UI =================
   return (
-    <div className="container">
-      <div className="card">
-        <h2>Dashboard Admin PRO</h2>
+    <div className="adminWrapper">
+      <div className="adminContainer">
+
+        <h1 className="adminTitle">Dashboard Admin PRO</h1>
 
         {/* FILTER */}
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:30 }}>
           <input type="date" value={startDate} onChange={(e)=>setStartDate(e.target.value)} />
           <input type="date" value={endDate} onChange={(e)=>setEndDate(e.target.value)} />
         </div>
 
         {/* SUMMARY */}
-        <div style={{ display:"flex", gap:20, flexWrap:"wrap", marginBottom:30 }}>
-          <div>Total Resi: {summary.totalResi}</div>
-          <div>Total Lunas: {summary.totalLunas}</div>
-          <div>Total Pending: {summary.totalPending}</div>
-          <div>Total Omzet: Rp {summary.totalOmzet.toLocaleString()}</div>
+        <div className="adminStats">
+          <div className="statCard">
+            <h3>Total Resi</h3>
+            <p>{summary.totalResi}</p>
+          </div>
+          <div className="statCard">
+            <h3>Total Lunas</h3>
+            <p>{summary.totalLunas}</p>
+          </div>
+          <div className="statCard">
+            <h3>Total Pending</h3>
+            <p>{summary.totalPending}</p>
+          </div>
+          <div className="statCard">
+            <h3>Total Omzet</h3>
+            <p>Rp {summary.totalOmzet.toLocaleString()}</p>
+          </div>
         </div>
 
-        {/* GRAFIK */}
-        {chartStatus && <Bar data={chartStatus} />}
-        <div style={{ marginTop:40 }}>
-          {chartPembayaran && <Doughnut data={chartPembayaran} />}
-        </div>
-        <div style={{ marginTop:40 }}>
-          {chartBulanan && <Bar data={chartBulanan} />}
-        </div>
+        {/* CHARTS */}
+        <div className="adminCharts">
+          {chartStatus && (
+            <div className="chartCard">
+              <Bar data={chartStatus} />
+            </div>
+          )}
 
-        <hr style={{ margin:"40px 0" }}/>
+          {chartPembayaran && (
+            <div className="chartCard">
+              <Doughnut data={chartPembayaran} />
+            </div>
+          )}
+
+          {chartBulanan && (
+            <div className="chartCard">
+              <Bar data={chartBulanan} />
+            </div>
+          )}
+        </div>
 
         {/* FORM */}
-        <input value={tracking} placeholder="Tracking" onChange={(e)=>setTracking(e.target.value)} />
-        <input value={nama} placeholder="Nama Pelanggan" onChange={(e)=>setNama(e.target.value)} />
-        <input value={totalHarga} type="number" placeholder="Total Harga" onChange={(e)=>setTotalHarga(e.target.value)} />
+        <div className="adminTableWrapper">
+          <h3 style={{ marginBottom:20 }}>Input / Update Data</h3>
 
-        <select value={status} onChange={(e)=>setStatus(e.target.value)}>
-          <option>Diproses</option>
-          <option>Dikirim</option>
-          <option>Sampai</option>
-        </select>
+          <div style={{ display:"grid", gap:10 }}>
+            <input value={tracking} placeholder="Tracking" onChange={(e)=>setTracking(e.target.value)} />
+            <input value={nama} placeholder="Nama Pelanggan" onChange={(e)=>setNama(e.target.value)} />
+            <input value={totalHarga} type="number" placeholder="Total Harga" onChange={(e)=>setTotalHarga(e.target.value)} />
 
-        <input type="date" value={tanggalSampai} onChange={(e)=>setTanggalSampai(e.target.value)} />
+            <select value={status} onChange={(e)=>setStatus(e.target.value)}>
+              <option>Diproses</option>
+              <option>Dikirim</option>
+              <option>Sampai</option>
+            </select>
 
-        <select value={statusPembayaran} onChange={(e)=>setStatusPembayaran(e.target.value)}>
-          <option>Belum Lunas</option>
-          <option>Lunas</option>
-        </select>
+            <input type="date" value={tanggalSampai} onChange={(e)=>setTanggalSampai(e.target.value)} />
 
-        <button onClick={handleInsert}>Simpan Data</button>
-        <button onClick={handleExport} style={{ marginLeft:10 }}>
-          Export Excel
-        </button>
+            <select value={statusPembayaran} onChange={(e)=>setStatusPembayaran(e.target.value)}>
+              <option>Belum Lunas</option>
+              <option>Lunas</option>
+            </select>
+
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+              <button onClick={handleInsert}>Simpan Data</button>
+              <button onClick={handleExport}>Export Excel</button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );

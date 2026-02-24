@@ -344,3 +344,124 @@ td {
     font-size: 14px;
   }
 }
+
+/* ================= ADMIN DASHBOARD ================= */
+
+.adminWrapper {
+  min-height: 100vh;
+  background: linear-gradient(135deg,#0f172a,#1e293b);
+  padding: 120px 20px 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.adminContainer {
+  width: 100%;
+  max-width: 1300px;
+  color: white;
+}
+
+.adminTitle {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 30px;
+}
+
+.adminStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.statCard {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(15px);
+  padding: 20px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.statCard h3 {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.statCard p {
+  font-size: 22px;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+.adminCharts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(350px,1fr));
+  gap: 30px;
+  margin-bottom: 50px;
+}
+
+.chartCard {
+  background: rgba(255,255,255,0.08);
+  padding: 25px;
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+}
+
+.chartCard canvas {
+  max-height: 350px !important;
+}
+
+/* ================= ADMIN TABLE ================= */
+
+.adminTableWrapper {
+  background: white;
+  color: #111;
+  border-radius: 20px;
+  padding: 20px;
+  overflow-x: auto;
+}
+
+.adminTableWrapper table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.adminTableWrapper th {
+  background: #1e40af;
+  color: white;
+  padding: 12px;
+  font-size: 14px;
+}
+
+.adminTableWrapper td {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+.adminTableWrapper select,
+.adminTableWrapper input {
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+/* ================= MOBILE FIX ================= */
+
+@media (max-width:768px){
+
+  .adminWrapper{
+    padding:100px 15px 40px;
+  }
+
+  .adminTitle{
+    font-size:22px;
+  }
+
+  .chartCard canvas{
+    max-height:250px !important;
+  }
+
+}
