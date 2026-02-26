@@ -7,15 +7,16 @@ export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(false);
 
-  // Loading animation
+  // Loading Animation
   useEffect(() => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setLoading(false);
       setVisible(true);
-    }, 1500);
+    }, 1200);
+    return () => clearTimeout(timer);
   }, []);
 
-  // Navbar scroll effect
+  // Navbar Scroll Effect
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -61,6 +62,7 @@ export default function Home() {
 
         <div className={`navLinksPremium ${menuOpen ? "active" : ""}`}>
           <Link href="/" onClick={()=>setMenuOpen(false)}>Home</Link>
+          <Link href="/tentang" onClick={()=>setMenuOpen(false)}>Tentang</Link>
           <Link href="/harga" onClick={()=>setMenuOpen(false)}>Harga</Link>
           <Link href="/tracking" onClick={()=>setMenuOpen(false)}>Tracking</Link>
           <a href="#kontak" onClick={()=>setMenuOpen(false)}>Kontak</a>
@@ -81,7 +83,6 @@ export default function Home() {
         <img src="/logo.png" width="120" alt="Logo" />
 
         <h1>Layar Timur Express</h1>
-
         <p>Mengantar Kepercayaan</p>
 
         <div className="heroButtonsPremium">
@@ -103,19 +104,19 @@ export default function Home() {
       <div className="marketplaceSection fadeScroll">
         <div className="marketplaceContainer">
 
-          <a href="#" target="_blank">
+          <a href="#" target="_blank" rel="noopener noreferrer">
             <img src="/tiktok.png" alt="TikTok Shop" />
           </a>
 
-          <a href="#" target="_blank">
+          <a href="#" target="_blank" rel="noopener noreferrer">
             <img src="/shopee.png" alt="Shopee" />
           </a>
 
-          <a href="#" target="_blank">
+          <a href="#" target="_blank" rel="noopener noreferrer">
             <img src="/lazada.png" alt="Lazada" />
           </a>
 
-          <a href="#" target="_blank">
+          <a href="#" target="_blank" rel="noopener noreferrer">
             <img src="/tokopedia.png" alt="Tokopedia" />
           </a>
 
