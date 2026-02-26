@@ -466,52 +466,119 @@ td {
 
 }
 
-/* ================= MARKETPLACE SECTION ================= */
+/* ================= MARKETPLACE SECTION – PREMIUM 2026 ================= */
 
 .marketplaceSection {
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-top: 60px;
-  margin-bottom: 80px;
+  margin-top: 80px;
+  margin-bottom: 100px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Soft animated background glow */
+.marketplaceSection::before {
+  content: "";
+  position: absolute;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(56,189,248,0.08), transparent 70%);
+  animation: glowMove 12s ease-in-out infinite alternate;
+  z-index: 0;
+}
+
+@keyframes glowMove {
+  0% { transform: translate(-20%, -20%); }
+  100% { transform: translate(20%, 20%); }
 }
 
 .marketplaceContainer {
+  position: relative;
+  z-index: 2;
   display: flex;
-  gap: 60px;
+  gap: 70px;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
 }
 
+/* Glass floating card */
 .marketplaceContainer a {
   background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(15px);
-  padding: 20px 30px;
-  border-radius: 20px;
-  transition: 0.3s ease;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  backdrop-filter: blur(18px);
+  padding: 25px 35px;
+  border-radius: 25px;
+  transition: 0.4s ease;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+  animation: floatCard 6s ease-in-out infinite;
+  position: relative;
 }
 
+/* Floating animation */
+@keyframes floatCard {
+  0%,100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Neon edge glow */
+.marketplaceContainer a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 25px;
+  padding: 1px;
+  background: linear-gradient(45deg,#38bdf8,#6366f1,#38bdf8);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: 0.4s;
+}
+
+.marketplaceContainer a:hover::after {
+  opacity: 1;
+}
+
+/* Hover effect */
 .marketplaceContainer a:hover {
-  transform: translateY(-8px) scale(1.05);
-  box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+  transform: translateY(-12px) scale(1.08);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.7);
 }
 
+/* Logo styling */
 .marketplaceContainer img {
-  height: 40px;
+  height: 55px;
   object-fit: contain;
+  transition: 0.4s ease;
+  filter: drop-shadow(0 10px 25px rgba(0,0,0,0.5));
 }
 
-/* MOBILE */
+/* Logo glow hover */
+.marketplaceContainer a:hover img {
+  filter: drop-shadow(0 15px 40px rgba(56,189,248,0.6));
+  transform: scale(1.1);
+}
+
+/* ================= MOBILE ================= */
+
 @media (max-width:768px){
+
   .marketplaceContainer {
-    gap: 25px;
+    gap: 30px;
   }
 
   .marketplaceContainer img {
-    height: 30px;
+    height: 40px;
   }
+
+  .marketplaceContainer a {
+    padding: 20px 25px;
+  }
+
 }
 
 /* ================= ABOUT PAGE ================= */
