@@ -44,10 +44,12 @@ export default function Admin() {
   // ================= STATE =================
   const [tracking, setTracking] = useState("");
   const [nama, setNama] = useState("");
+  const [noTelpon, setNoTelpon] = useState("");
   const [status, setStatus] = useState("Diproses");
   const [tanggalSampai, setTanggalSampai] = useState("");
   const [statusPembayaran, setStatusPembayaran] = useState("Belum Lunas");
   const [totalHarga, setTotalHarga] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const [summary, setSummary] = useState({
     totalResi: 0,
@@ -79,10 +81,14 @@ export default function Admin() {
 
   // ================= INSERT =================
   const handleInsert = async () => {
-    if (!tracking || !nama) {
-      alert("Tracking dan Nama wajib diisi");
+    if (!tracking || !nama || !noTelpon) {
+      alert("Tracking, Nama dan Nomor HP wajib diisi");
       return;
     }
+
+    setSaving(true);
+
+    const cleanedPhone = noTelpon.replace(/\D/g, "");
 
     const { error } = await supabase
       .from("PENGIRIMAN")
@@ -90,6 +96,7 @@ export default function Admin() {
         [{
           tracking_number: tracking.trim(),
           nama_pelanggan: nama,
+          no_telpon: cleanedPhone,
           status_pengiriman: status,
           tanggal_sampai: tanggalSampai || null,
           status_pembayaran: statusPembayaran,
@@ -97,6 +104,8 @@ export default function Admin() {
         }],
         { onConflict: "tracking_number" }
       );
+
+    setSaving(false);
 
     if (error) {
       alert(error.message);
@@ -110,13 +119,14 @@ export default function Admin() {
   const resetForm = () => {
     setTracking("");
     setNama("");
+    setNoTelpon("");
     setStatus("Diproses");
     setTanggalSampai("");
     setStatusPembayaran("Belum Lunas");
     setTotalHarga("");
   };
 
-  // ================= LOAD =================
+  // ================= LOAD DASHBOARD =================
   const loadDashboard = async () => {
     let query = supabase.from("PENGIRIMAN").select("*");
 
@@ -185,67 +195,37 @@ export default function Admin() {
     XLSX.writeFile(workbook, "Data_Tracking_Layar_Timur.xlsx");
   };
 
-  // ================= UI =================
   return (
     <div className="adminWrapper">
       <div className="adminContainer">
 
         <h1 className="adminTitle">Dashboard Admin PRO</h1>
 
-        {/* FILTER */}
         <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:30 }}>
           <input type="date" value={startDate} onChange={(e)=>setStartDate(e.target.value)} />
           <input type="date" value={endDate} onChange={(e)=>setEndDate(e.target.value)} />
         </div>
 
-        {/* SUMMARY */}
         <div className="adminStats">
-          <div className="statCard">
-            <h3>Total Resi</h3>
-            <p>{summary.totalResi}</p>
-          </div>
-          <div className="statCard">
-            <h3>Total Lunas</h3>
-            <p>{summary.totalLunas}</p>
-          </div>
-          <div className="statCard">
-            <h3>Total Pending</h3>
-            <p>{summary.totalPending}</p>
-          </div>
-          <div className="statCard">
-            <h3>Total Omzet</h3>
-            <p>Rp {summary.totalOmzet.toLocaleString()}</p>
-          </div>
+          <div className="statCard"><h3>Total Resi</h3><p>{summary.totalResi}</p></div>
+          <div className="statCard"><h3>Total Lunas</h3><p>{summary.totalLunas}</p></div>
+          <div className="statCard"><h3>Total Pending</h3><p>{summary.totalPending}</p></div>
+          <div className="statCard"><h3>Total Omzet</h3><p>Rp {summary.totalOmzet.toLocaleString()}</p></div>
         </div>
 
-        {/* CHARTS */}
         <div className="adminCharts">
-          {chartStatus && (
-            <div className="chartCard">
-              <Bar data={chartStatus} />
-            </div>
-          )}
-
-          {chartPembayaran && (
-            <div className="chartCard">
-              <Doughnut data={chartPembayaran} />
-            </div>
-          )}
-
-          {chartBulanan && (
-            <div className="chartCard">
-              <Bar data={chartBulanan} />
-            </div>
-          )}
+          {chartStatus && <div className="chartCard"><Bar data={chartStatus} /></div>}
+          {chartPembayaran && <div className="chartCard"><Doughnut data={chartPembayaran} /></div>}
+          {chartBulanan && <div className="chartCard"><Bar data={chartBulanan} /></div>}
         </div>
 
-        {/* FORM */}
         <div className="adminTableWrapper">
           <h3 style={{ marginBottom:20 }}>Input / Update Data</h3>
 
           <div style={{ display:"grid", gap:10 }}>
             <input value={tracking} placeholder="Tracking" onChange={(e)=>setTracking(e.target.value)} />
             <input value={nama} placeholder="Nama Pelanggan" onChange={(e)=>setNama(e.target.value)} />
+            <input value={noTelpon} placeholder="Nomor HP Penerima" onChange={(e)=>setNoTelpon(e.target.value)} />
             <input value={totalHarga} type="number" placeholder="Total Harga" onChange={(e)=>setTotalHarga(e.target.value)} />
 
             <select value={status} onChange={(e)=>setStatus(e.target.value)}>
@@ -262,7 +242,9 @@ export default function Admin() {
             </select>
 
             <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-              <button onClick={handleInsert}>Simpan Data</button>
+              <button onClick={handleInsert} disabled={saving}>
+                {saving ? "Menyimpan..." : "Simpan Data"}
+              </button>
               <button onClick={handleExport}>Export Excel</button>
             </div>
           </div>
