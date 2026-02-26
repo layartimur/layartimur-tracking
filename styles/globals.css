@@ -513,3 +513,64 @@ td {
     height: 30px;
   }
 }
+
+/* ================= ABOUT PAGE ================= */
+
+.aboutPageWrapper {
+  min-height: 100vh;
+  background: linear-gradient(135deg,#0f172a,#1e293b);
+  display: flex;
+  justify-content: center;
+  padding: 120px 20px;
+}
+
+.aboutPageContainer {
+  max-width: 1000px;
+  width: 100%;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(25px);
+  padding: 60px;
+  border-radius: 30px;
+  color: white;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+}
+
+.aboutPageContainer h1 {
+  font-size: 32px;
+  margin-bottom: 20px;
+}
+
+.aboutPageContainer p {
+  margin-bottom: 15px;
+  line-height: 1.7;
+  opacity: 0.9;
+}
+
+.aboutPageGrid {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+  gap: 25px;
+}
+
+.aboutBox {
+  background: rgba(255,255,255,0.1);
+  padding: 20px;
+  border-radius: 15px;
+  transition: 0.3s;
+}
+
+.aboutBox:hover {
+  transform: translateY(-5px);
+  background: rgba(255,255,255,0.15);
+}
+
+.aboutBackBtn {
+  margin-top: 40px;
+  padding: 12px 25px;
+  background: #38bdf8;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
