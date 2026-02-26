@@ -465,3 +465,51 @@ td {
   }
 
 }
+
+/* ================= MARKETPLACE SECTION ================= */
+
+.marketplaceSection {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 60px;
+  margin-bottom: 80px;
+}
+
+.marketplaceContainer {
+  display: flex;
+  gap: 60px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.marketplaceContainer a {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(15px);
+  padding: 20px 30px;
+  border-radius: 20px;
+  transition: 0.3s ease;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.marketplaceContainer a:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+}
+
+.marketplaceContainer img {
+  height: 40px;
+  object-fit: contain;
+}
+
+/* MOBILE */
+@media (max-width:768px){
+  .marketplaceContainer {
+    gap: 25px;
+  }
+
+  .marketplaceContainer img {
+    height: 30px;
+  }
+}

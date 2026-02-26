@@ -7,6 +7,7 @@ export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(false);
 
+  // Loading animation
   useEffect(() => {
     setTimeout(() => {
       setLoading(false);
@@ -14,12 +15,32 @@ export default function Home() {
     }, 1500);
   }, []);
 
+  // Navbar scroll effect
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Scroll Fade Animation
+  useEffect(() => {
+    const elements = document.querySelectorAll(".fadeScroll");
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("showFade");
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
   }, []);
 
   if (loading) {
@@ -34,15 +55,15 @@ export default function Home() {
   return (
     <div className="heroPremium">
 
-      {/* NAVBAR */}
+      {/* ================= NAVBAR ================= */}
       <nav className={`navbarPremium ${scrolled ? "scrolled" : ""}`}>
         <div className="logoPremium">Layar Timur Express</div>
 
         <div className={`navLinksPremium ${menuOpen ? "active" : ""}`}>
-          <Link href="/">Home</Link>
-          <Link href="/harga">Harga</Link>
-          <Link href="/tracking">Tracking</Link>
-          <a href="#kontak">Kontak</a>
+          <Link href="/" onClick={()=>setMenuOpen(false)}>Home</Link>
+          <Link href="/harga" onClick={()=>setMenuOpen(false)}>Harga</Link>
+          <Link href="/tracking" onClick={()=>setMenuOpen(false)}>Tracking</Link>
+          <a href="#kontak" onClick={()=>setMenuOpen(false)}>Kontak</a>
         </div>
 
         <div 
@@ -55,15 +76,13 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* HERO CARD */}
+      {/* ================= HERO CARD ================= */}
       <div className={`heroCardPremium ${visible ? "show" : ""}`}>
         <img src="/logo.png" width="120" alt="Logo" />
 
         <h1>Layar Timur Express</h1>
 
-        <p>
-          Mengantar Kepercayaan
-        </p>
+        <p>Mengantar Kepercayaan</p>
 
         <div className="heroButtonsPremium">
           <Link href="/tracking">
@@ -80,7 +99,30 @@ export default function Home() {
         </div>
       </div>
 
-      {/* WHATSAPP */}
+      {/* ================= MARKETPLACE ================= */}
+      <div className="marketplaceSection fadeScroll">
+        <div className="marketplaceContainer">
+
+          <a href="#" target="_blank">
+            <img src="/tiktok.png" alt="TikTok Shop" />
+          </a>
+
+          <a href="#" target="_blank">
+            <img src="/shopee.png" alt="Shopee" />
+          </a>
+
+          <a href="#" target="_blank">
+            <img src="/lazada.png" alt="Lazada" />
+          </a>
+
+          <a href="#" target="_blank">
+            <img src="/tokopedia.png" alt="Tokopedia" />
+          </a>
+
+        </div>
+      </div>
+
+      {/* ================= WHATSAPP ================= */}
       <a
         href="https://wa.me/6285977833502"
         target="_blank"
@@ -90,7 +132,7 @@ export default function Home() {
         💬
       </a>
 
-      {/* FOOTER */}
+      {/* ================= FOOTER ================= */}
       <footer id="kontak" className="footerPremium">
         <h3>Layar Timur Express</h3>
         <p>
