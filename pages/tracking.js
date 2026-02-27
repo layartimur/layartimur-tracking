@@ -74,7 +74,7 @@ export default function Tracking() {
 
           <input
             className="trackingInput"
-            placeholder="4 Digit Terakhir No HP"
+            placeholder="4 Digit Terakhir No HP Penerima"
             maxLength={4}
             value={last4}
             onChange={(e)=>setLast4(e.target.value)}
