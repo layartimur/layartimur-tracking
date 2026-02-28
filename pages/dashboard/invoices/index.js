@@ -52,38 +52,42 @@ export default function Invoices() {
 
   const generateInvoicePDF = async (invoice) => {
     try {
-      // ===== DYNAMIC IMPORT JSDPF (ANTI BUILD ERROR)
       if (!jsPDF) {
         const module = await import("jspdf");
         jsPDF = module.default;
       }
 
-      const shipment = invoice.shipments;
+      if (!invoice) return;
 
-      // ==========================
-      // STEP 4: AUTO GENERATE INVOICE NUMBER
-      // ==========================
-      if (!invoice.invoice_number) {
-        const { data: newInvNumber, error } =
+      const shipment = invoice.shipments || {};
+
+      // ===============================
+      // SAFE GENERATE INVOICE NUMBER
+      // ===============================
+      let invoiceNumber = invoice.invoice_number;
+
+      if (!invoiceNumber) {
+        const { data, error } =
           await supabase.rpc("generate_invoice_number");
 
-        if (error) {
-          console.error(error);
-          alert("Gagal generate nomor invoice");
-          return;
+        if (!error && data) {
+          await supabase
+            .from("invoices")
+            .update({ invoice_number: data })
+            .eq("id", invoice.id);
+
+          invoiceNumber = data;
         }
-
-        await supabase
-          .from("invoices")
-          .update({ invoice_number: newInvNumber })
-          .eq("id", invoice.id);
-
-        invoice.invoice_number = newInvNumber;
       }
 
-      // ==========================
+      const safeInvoiceNumber =
+        typeof invoiceNumber === "string" && invoiceNumber.length > 0
+          ? invoiceNumber
+          : "INVOICE";
+
+      // ===============================
       // LOAD ITEMS
-      // ==========================
+      // ===============================
       const { data: items } = await supabase
         .from("shipment_items")
         .select("*")
@@ -93,25 +97,28 @@ export default function Invoices() {
       const margin = 15;
       const pageWidth = 210;
 
-      // ==========================
+      // ===============================
       // LOAD LOGO
-      // ==========================
-      const logoBase64 = await fetch("/logosj.png")
-        .then(res => res.blob())
-        .then(
-          blob =>
-            new Promise(resolve => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result);
-              reader.readAsDataURL(blob);
-            })
-        );
+      // ===============================
+      try {
+        const logoBase64 = await fetch("/logosj.png")
+          .then(res => res.blob())
+          .then(
+            blob =>
+              new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onloadend = () =>
+                  resolve(reader.result);
+                reader.readAsDataURL(blob);
+              })
+          );
 
-      doc.addImage(logoBase64, "PNG", margin, 15, 30, 30);
+        doc.addImage(logoBase64, "PNG", margin, 15, 30, 30);
+      } catch (e) {}
 
-      // ==========================
-      // HEADER KIRI (ALAMAT PERUSAHAAN)
-      // ==========================
+      // ===============================
+      // HEADER KIRI
+      // ===============================
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
       doc.text("LAYAR TIMUR", 50, 20);
@@ -124,25 +131,27 @@ export default function Invoices() {
       doc.text("Email : layartimur37@gmail.com", 50, 41);
       doc.text("No. Telp : 0859 7783 3502", 50, 46);
 
-      // ==========================
-      // STEP 5: HEADER KANAN (INVOICE NUMBER RESMI)
-      // ==========================
+      // ===============================
+      // HEADER KANAN (ANTI ERROR)
+      // ===============================
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
-      doc.text("INVOICE", pageWidth - margin, 20, { align: "right" });
+      doc.text("INVOICE", pageWidth - margin, 20, {
+        align: "right"
+      });
 
-      doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
 
       doc.text(
-        invoice.invoice_number,
+        String(safeInvoiceNumber),
         pageWidth - margin,
         30,
         { align: "right" }
       );
 
       doc.text(
-        `SJ : ${shipment.sj_number || "-"}`,
+        `SJ : ${shipment?.sj_number || "-"}`,
         pageWidth - margin,
         36,
         { align: "right" }
@@ -150,24 +159,24 @@ export default function Invoices() {
 
       doc.line(margin, 55, pageWidth - margin, 55);
 
-      // ==========================
-      // CUSTOMER SECTION
-      // ==========================
+      // ===============================
+      // CUSTOMER
+      // ===============================
       doc.setFont("helvetica", "bold");
       doc.text("Ditagihkan Kepada:", margin, 65);
 
       doc.setFont("helvetica", "normal");
-      doc.text(shipment.customer_name || "-", margin, 72);
-      doc.text(`Alamat : ${shipment.address || "-"}`, margin, 78);
-      doc.text(`Telp : ${shipment.phone || "-"}`, margin, 84);
+      doc.text(shipment?.customer_name || "-", margin, 72);
+      doc.text(`Alamat : ${shipment?.address || "-"}`, margin, 78);
+      doc.text(`Telp : ${shipment?.phone || "-"}`, margin, 84);
 
+      // ===============================
+      // TABLE
+      // ===============================
       let y = 95;
       let grandTotal = 0;
       let insuranceTotal = 0;
 
-      // ==========================
-      // TABLE HEADER
-      // ==========================
       doc.setFillColor(230, 230, 230);
       doc.rect(margin, y, pageWidth - margin * 2, 10, "F");
 
@@ -181,23 +190,23 @@ export default function Invoices() {
       y += 10;
       doc.setFont("helvetica", "normal");
 
-      items?.forEach(item => {
-        const insurance = item.insurance
-          ? (item.nominal || 0) * 0.002
+      (items || []).forEach(item => {
+        const insurance = item?.insurance
+          ? (item?.nominal || 0) * 0.002
           : 0;
 
         const subtotal =
-          (item.qty || 0) * (item.price || 0) + insurance;
+          (item?.qty || 0) * (item?.price || 0) + insurance;
 
         grandTotal += subtotal;
         insuranceTotal += insurance;
 
         doc.rect(margin, y, pageWidth - margin * 2, 10);
 
-        doc.text(item.name || "-", margin + 5, y + 7);
-        doc.text(String(item.qty || 0), margin + 95, y + 7);
+        doc.text(String(item?.name || "-"), margin + 5, y + 7);
+        doc.text(String(item?.qty || 0), margin + 95, y + 7);
         doc.text(
-          `Rp ${(item.price || 0).toLocaleString()}`,
+          `Rp ${(item?.price || 0).toLocaleString()}`,
           margin + 110,
           y + 7
         );
@@ -234,9 +243,9 @@ export default function Invoices() {
         { align: "right" }
       );
 
-      // ==========================
-      // PAYMENT SECTION
-      // ==========================
+      // ===============================
+      // PAYMENT
+      // ===============================
       y += 20;
 
       doc.setFont("helvetica", "bold");
@@ -250,9 +259,9 @@ export default function Invoices() {
       y += 7;
       doc.text("No.Rek : 39343434343", margin, y);
 
-      // ==========================
-      // WATERMARK PAID
-      // ==========================
+      // ===============================
+      // WATERMARK
+      // ===============================
       if (invoice.status === "Paid") {
         doc.setTextColor(0, 150, 0);
         doc.setFontSize(50);
@@ -263,10 +272,11 @@ export default function Invoices() {
         doc.setTextColor(0, 0, 0);
       }
 
-      doc.save(`${invoice.invoice_number}.pdf`);
+      doc.save(`${safeInvoiceNumber}.pdf`);
 
     } catch (err) {
       console.error("INVOICE PDF ERROR:", err);
+      alert("Terjadi kesalahan saat membuat invoice");
     }
   };
 
