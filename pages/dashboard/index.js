@@ -188,6 +188,9 @@ export default function Dashboard() {
           🧾 Invoices
         </button>
       </div>
+<button onClick={() => router.push("/dashboard/expenses/create")}>
+  💸 Input Pengeluaran
+</button>
 
       <div className="cardContainer">
         <Card title="Revenue" value={summary.revenue} />
