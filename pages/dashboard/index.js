@@ -4,8 +4,8 @@ import { supabase } from "../../utils/supabaseClient";
 
 export default function Dashboard() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     checkSession();
@@ -15,21 +15,15 @@ export default function Dashboard() {
     const { data } = await supabase.auth.getSession();
 
     if (!data.session) {
-      // Jika tidak login → redirect ke login
       router.push("/login");
     } else {
-      // Jika login → tampilkan email
       setUserEmail(data.session.user.email);
       setLoading(false);
     }
   };
 
   if (loading) {
-    return (
-      <div style={{ padding: 40 }}>
-        <h2>Loading...</h2>
-      </div>
-    );
+    return <div style={{ padding: 40 }}>Loading...</div>;
   }
 
   return (
@@ -43,13 +37,27 @@ export default function Dashboard() {
         <strong>Login sebagai:</strong> {userEmail}
       </p>
 
+      <div style={{ marginTop: 30, display: "flex", gap: 20 }}>
+        <button onClick={() => router.push("/dashboard/shipments")}>
+          📦 Shipments
+        </button>
+
+        <button onClick={() => router.push("/dashboard/shipments/create")}>
+          ➕ Create Shipment
+        </button>
+
+        <button onClick={() => router.push("/dashboard/invoices")}>
+          🧾 Invoices
+        </button>
+      </div>
+
       <button
         onClick={async () => {
           await supabase.auth.signOut();
           router.push("/login");
         }}
         style={{
-          marginTop: 20,
+          marginTop: 40,
           padding: "10px 20px",
           backgroundColor: "#dc2626",
           color: "white",
