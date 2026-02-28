@@ -18,11 +18,12 @@ export default function CreateShipment() {
     phone: "",
     address: "",
     vehicle_id: "",
-    weight: "",
+    weight: ""
   });
 
+  // Sekarang item hanya simpan harga per kg & detail
   const [items, setItems] = useState([
-    { name: "", qty: 1, unit: "Pcs", price: 0, nominal: 0, insurance: false }
+    { name: "", unit: "Kg", price_per_kg: 0, nominal: 0, insurance: false }
   ]);
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function CreateShipment() {
   const addItem = () => {
     setItems([
       ...items,
-      { name: "", qty: 1, unit: "Pcs", price: 0, nominal: 0, insurance: false }
+      { name: "", unit: "Kg", price_per_kg: 0, nominal: 0, insurance: false }
     ]);
   };
 
@@ -57,13 +58,23 @@ export default function CreateShipment() {
     setItems(updated);
   };
 
+  // ===============================
+  // LOGIC BARU: BERAT × HARGA PER KG
+  // ===============================
   const calculateTotal = () => {
+    const berat = Number(form.weight) || 0;
     let total = 0;
+
     items.forEach(item => {
-      const sub = item.qty * item.price;
-      const ins = item.insurance ? item.nominal * 0.002 : 0;
-      total += sub + ins;
+      const hargaPerKg = Number(item.price_per_kg) || 0;
+      const subtotal = berat * hargaPerKg;
+      const ins = item.insurance
+        ? (Number(item.nominal) || 0) * 0.002
+        : 0;
+
+      total += subtotal + ins;
     });
+
     return total;
   };
 
@@ -73,8 +84,16 @@ export default function CreateShipment() {
       return;
     }
 
+    if (!form.weight) {
+      alert("Berat wajib diisi");
+      return;
+    }
+
     setLoading(true);
 
+    // ===============================
+    // INSERT SHIPMENT
+    // ===============================
     const { data: shipment, error } = await supabase
       .from("shipments")
       .insert([{
@@ -83,7 +102,7 @@ export default function CreateShipment() {
         phone: form.phone,
         address: form.address,
         vehicle_id: form.vehicle_id || null,
-        weight: Number(form.weight) || 0,
+        weight: Number(form.weight),
         status: "Diproses"
       }])
       .select()
@@ -95,18 +114,24 @@ export default function CreateShipment() {
       return;
     }
 
+    // ===============================
+    // INSERT ITEMS
+    // ===============================
     for (let item of items) {
       await supabase.from("shipment_items").insert([{
         shipment_id: shipment.id,
         name: item.name,
-        qty: Number(item.qty),
-        unit: item.unit,
-        price: Number(item.price),
+        qty: Number(form.weight), // qty sekarang = berat
+        unit: "Kg",
+        price: Number(item.price_per_kg), // harga per kg
         nominal: Number(item.nominal),
         insurance: item.insurance
       }]);
     }
 
+    // ===============================
+    // INSERT INVOICE
+    // ===============================
     await supabase.from("invoices").insert([{
       shipment_id: shipment.id,
       total: calculateTotal(),
@@ -122,15 +147,37 @@ export default function CreateShipment() {
       <div className="adminContainer">
         <h1>Create Shipment</h1>
 
-        <input name="tracking_number" placeholder="Tracking" onChange={handleChange} />
-        <input name="customer_name" placeholder="Customer" onChange={handleChange} />
-        <input name="phone" placeholder="Phone" onChange={handleChange} />
-        <input name="address" placeholder="Alamat" onChange={handleChange} />
-        <input name="weight" type="number" placeholder="Berat (kg)" onChange={handleChange} />
+        <input
+          name="tracking_number"
+          placeholder="Tracking"
+          onChange={handleChange}
+        />
+        <input
+          name="customer_name"
+          placeholder="Customer"
+          onChange={handleChange}
+        />
+        <input
+          name="phone"
+          placeholder="Phone"
+          onChange={handleChange}
+        />
+        <input
+          name="address"
+          placeholder="Alamat"
+          onChange={handleChange}
+        />
+
+        <input
+          name="weight"
+          type="number"
+          placeholder="Berat (Kg)"
+          onChange={handleChange}
+        />
 
         <select name="vehicle_id" onChange={handleChange}>
           <option value="">Pilih Kendaraan</option>
-          {vehicles.map(v=>(
+          {vehicles.map(v => (
             <option key={v.id} value={v.id}>
               {v.name} - {v.plate_number}
             </option>
@@ -139,18 +186,44 @@ export default function CreateShipment() {
 
         <h3>Items</h3>
 
-        {items.map((item,index)=>(
+        {items.map((item, index) => (
           <div key={index}>
-            <input placeholder="Nama Barang" onChange={(e)=>handleItemChange(index,"name",e.target.value)} />
-            <input type="number" placeholder="Qty" onChange={(e)=>handleItemChange(index,"qty",e.target.value)} />
-            <input placeholder="Satuan" onChange={(e)=>handleItemChange(index,"unit",e.target.value)} />
-            <input type="number" placeholder="Harga" onChange={(e)=>handleItemChange(index,"price",e.target.value)} />
-            <input type="number" placeholder="Nominal Barang" onChange={(e)=>handleItemChange(index,"nominal",e.target.value)} />
+            <input
+              placeholder="Nama Barang"
+              onChange={(e) =>
+                handleItemChange(index, "name", e.target.value)
+              }
+            />
+
+            <input
+              type="number"
+              placeholder="Harga / Kg"
+              onChange={(e) =>
+                handleItemChange(index, "price_per_kg", e.target.value)
+              }
+            />
+
+            <input
+              type="number"
+              placeholder="Nominal Barang"
+              onChange={(e) =>
+                handleItemChange(index, "nominal", e.target.value)
+              }
+            />
+
             <label>
-              <input type="checkbox" onChange={(e)=>handleItemChange(index,"insurance",e.target.checked)} />
+              <input
+                type="checkbox"
+                onChange={(e) =>
+                  handleItemChange(index, "insurance", e.target.checked)
+                }
+              />
               Asuransi 0.2%
             </label>
-            <button onClick={()=>removeItem(index)}>Hapus</button>
+
+            <button onClick={() => removeItem(index)}>
+              Hapus
+            </button>
           </div>
         ))}
 
