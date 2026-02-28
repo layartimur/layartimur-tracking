@@ -33,13 +33,13 @@ export default function Shipments() {
         jsPDF = module.default;
       }
 
-      // =========================
-      // GENERATE SJ NUMBER
-      // =========================
-      let sjNumber = shipment.sj_number;
+// =========================
+// GENERATE SJ NUMBER FIX
+// =========================
+let sjNumber = shipment.sj_number;
 
-      if (!shipment.sj_number) {
-  const { data, error } = await supabase
+if (!sjNumber) {
+  const { data: newSJ, error } = await supabase
     .rpc("generate_sj_number");
 
   if (error) {
@@ -50,10 +50,10 @@ export default function Shipments() {
 
   await supabase
     .from("shipments")
-    .update({ sj_number: data })
+    .update({ sj_number: newSJ })
     .eq("id", shipment.id);
 
-  shipment.sj_number = data;
+  sjNumber = newSJ; // 🔥 INI YANG PENTING
 }
       // =========================
       // LOAD ITEMS

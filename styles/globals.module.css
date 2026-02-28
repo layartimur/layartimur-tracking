@@ -1,0 +1,118 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f4f6;
+}
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.card {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  width: 100%;
+  max-width: 700px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+}
+
+.logoBox {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.searchBox {
+  display: flex;
+  gap: 10px;
+}
+
+input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+button {
+  padding: 12px 20px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1e40af;
+}
+
+.error {
+  color: red;
+  margin-top: 15px;
+}
+
+.loading {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #0a2a66;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.progressContainer {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 5px;
+  margin-top: 25px;
+}
+
+.progressBar {
+  height: 8px;
+  background: #16a34a;
+  border-radius: 5px;
+}
+
+.timeline {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.step {
+  flex: 1;
+  text-align: center;
+  padding: 5px;
+  color: #999;
+}
+
+.step.active {
+  color: #16a34a;
+  font-weight: bold;
+}
+
+table {
+  width: 100%;
+  margin-top: 25px;
+  border-collapse: collapse;
+}
+
+td {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}

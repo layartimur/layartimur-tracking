@@ -27,7 +27,8 @@ export default function Invoices() {
           customer_name,
           phone,
           address,
-          sj_number
+          sj_number,
+          weight
         )
       `)
       .order("created_at", { ascending: false });
@@ -60,9 +61,10 @@ export default function Invoices() {
       if (!invoice) return;
 
       const shipment = invoice.shipments || {};
+      const berat = Number(shipment.weight) > 0 ? Number(shipment.weight) : 1;
 
       // ===============================
-      // SAFE GENERATE INVOICE NUMBER
+      // GENERATE INVOICE NUMBER
       // ===============================
       let invoiceNumber = invoice.invoice_number;
 
@@ -107,17 +109,16 @@ export default function Invoices() {
             blob =>
               new Promise(resolve => {
                 const reader = new FileReader();
-                reader.onloadend = () =>
-                  resolve(reader.result);
+                reader.onloadend = () => resolve(reader.result);
                 reader.readAsDataURL(blob);
               })
           );
 
         doc.addImage(logoBase64, "PNG", margin, 15, 30, 30);
-      } catch (e) {}
+      } catch {}
 
       // ===============================
-      // HEADER KIRI
+      // HEADER
       // ===============================
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
@@ -131,27 +132,18 @@ export default function Invoices() {
       doc.text("Email : layartimur37@gmail.com", 50, 41);
       doc.text("No. Telp : 0859 7783 3502", 50, 46);
 
-      // ===============================
-      // HEADER KANAN (ANTI ERROR)
-      // ===============================
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
-      doc.text("INVOICE", pageWidth - margin, 20, {
+      doc.text("INVOICE", pageWidth - margin, 20, { align: "right" });
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text(String(safeInvoiceNumber), pageWidth - margin, 30, {
         align: "right"
       });
 
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
-
       doc.text(
-        String(safeInvoiceNumber),
-        pageWidth - margin,
-        30,
-        { align: "right" }
-      );
-
-      doc.text(
-        `SJ : ${shipment?.sj_number || "-"}`,
+        `SJ : ${shipment.sj_number || "-"}`,
         pageWidth - margin,
         36,
         { align: "right" }
@@ -166,9 +158,9 @@ export default function Invoices() {
       doc.text("Ditagihkan Kepada:", margin, 65);
 
       doc.setFont("helvetica", "normal");
-      doc.text(shipment?.customer_name || "-", margin, 72);
-      doc.text(`Alamat : ${shipment?.address || "-"}`, margin, 78);
-      doc.text(`Telp : ${shipment?.phone || "-"}`, margin, 84);
+      doc.text(shipment.customer_name || "-", margin, 72);
+      doc.text(`Alamat : ${shipment.address || "-"}`, margin, 78);
+      doc.text(`Telp : ${shipment.phone || "-"}`, margin, 84);
 
       // ===============================
       // TABLE
@@ -182,41 +174,48 @@ export default function Invoices() {
 
       doc.setFont("helvetica", "bold");
       doc.text("Deskripsi", margin + 5, y + 7);
-      doc.text("Qty", margin + 95, y + 7);
-      doc.text("Harga", margin + 110, y + 7);
+      doc.text("Qty", margin + 85, y + 7);
+      doc.text("Harga", margin + 105, y + 7);
       doc.text("Asuransi", margin + 135, y + 7);
       doc.text("Subtotal", margin + 165, y + 7);
 
       y += 10;
       doc.setFont("helvetica", "normal");
 
-      (items || []).forEach(item => {
-        const insurance = item?.insurance
-          ? (item?.nominal || 0) * 0.002
-          : 0;
+      (items || []).forEach((item) => {
+        const hargaPerKg = Number(item.price) || 0;
 
-        const subtotal =
-          (item?.qty || 0) * (item?.price || 0) + insurance;
+        // SUBTOTAL = berat × harga
+        const subtotal = berat * hargaPerKg;
 
-        grandTotal += subtotal;
-        insuranceTotal += insurance;
+        // ASURANSI = nominal × 0.2%
+        const nominal = Number(item.item_value || item.nominal) || 0;
+        const ins = item.insurance ? nominal * 0.002 : 0;
+
+        const totalRow = subtotal + ins;
+
+        grandTotal += totalRow;
+        insuranceTotal += ins;
+
+        const qtyDisplay =
+          Number(item.qty) > 0 ? Number(item.qty) : 1;
 
         doc.rect(margin, y, pageWidth - margin * 2, 10);
 
-        doc.text(String(item?.name || "-"), margin + 5, y + 7);
-        doc.text(String(item?.qty || 0), margin + 95, y + 7);
+        doc.text(item.name || "-", margin + 5, y + 7);
+        doc.text(String(qtyDisplay), margin + 85, y + 7);
         doc.text(
-          `Rp ${(item?.price || 0).toLocaleString()}`,
-          margin + 110,
+          `Rp ${hargaPerKg.toLocaleString()}`,
+          margin + 105,
           y + 7
         );
         doc.text(
-          insurance ? `Rp ${insurance.toLocaleString()}` : "-",
+          ins > 0 ? `Rp ${ins.toLocaleString()}` : "-",
           margin + 135,
           y + 7
         );
         doc.text(
-          `Rp ${subtotal.toLocaleString()}`,
+          `Rp ${totalRow.toLocaleString()}`,
           margin + 165,
           y + 7
         );
@@ -255,9 +254,9 @@ export default function Invoices() {
       y += 7;
       doc.text("Bank : BCA", margin, y);
       y += 7;
-      doc.text("A.n : Nama Pemilik Rekening", margin, y);
+      doc.text("A.n : Gerardus Marianus Weru", margin, y);
       y += 7;
-      doc.text("No.Rek : 39343434343", margin, y);
+      doc.text("No.Rek : 3141599311", margin, y);
 
       // ===============================
       // WATERMARK

@@ -117,19 +117,29 @@ export default function CreateShipment() {
       return;
     }
 
-    // INSERT ITEMS
-    for (let item of items) {
-      await supabase.from("shipment_items").insert([{
-        shipment_id: shipment.id,
-        name: item.name,
-        qty: Number(item.qty), // hanya keterangan
-        unit: item.unit,
-        price: Number(item.price), // harga per kg
-        nominal: Number(item.nominal),
-        insurance: item.insurance
-      }]);
-    }
+    // ==========================
+// INSERT ITEMS (SAFE)
+// ==========================
+const itemsToInsert = items.map(item => ({
+  shipment_id: shipment.id,
+  name: item.name || "-",
+  qty: Number(item.qty) || 0,
+  unit: item.unit || "-",
+  price: Number(item.price) || 0,
+  item_value: Number(item.nominal) || 0,
+  insurance: item.insurance || false
+}));
 
+const { error: itemError } = await supabase
+  .from("shipment_items")
+  .insert(itemsToInsert);
+
+if (itemError) {
+  console.error("ITEM INSERT ERROR:", itemError);
+  alert("Gagal simpan item");
+  setLoading(false);
+  return;
+}
     // INSERT INVOICE
     await supabase.from("invoices").insert([{
       shipment_id: shipment.id,
@@ -221,4 +231,4 @@ export default function CreateShipment() {
       </div>
     </div>
   );
-}
+}	
