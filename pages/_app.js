@@ -1,7 +1,16 @@
 import '../styles/globals.css'
 import Head from 'next/head'
+import { useState } from 'react'
+import { SessionContextProvider } from '@supabase/auth-helpers-react'
+import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs'
 
 export default function App({ Component, pageProps }) {
+
+  // 🔐 Supabase session client
+  const [supabaseClient] = useState(() =>
+    createBrowserSupabaseClient()
+  )
+
   return (
     <>
       <Head>
@@ -10,16 +19,25 @@ export default function App({ Component, pageProps }) {
 
         {/* Basic SEO */}
         <title>Layar Timur Express</title>
-        <meta name="description" content="Layanan pengiriman terpercaya dari Surabaya ke seluruh NTT dan Indonesia." />
+        <meta
+          name="description"
+          content="Layanan pengiriman terpercaya dari Surabaya ke seluruh NTT dan Indonesia."
+        />
 
-        {/* Favicon (pastikan ada di public/) */}
+        {/* Favicon */}
         <link rel="icon" href="/logo.png" />
 
-        {/* Theme Color Mobile */}
+        {/* Theme Color */}
         <meta name="theme-color" content="#0f172a" />
       </Head>
 
-      <Component {...pageProps} />
+      {/* 🔐 SESSION PROVIDER (WAJIB UNTUK RLS) */}
+      <SessionContextProvider
+        supabaseClient={supabaseClient}
+        initialSession={pageProps.initialSession}
+      >
+        <Component {...pageProps} />
+      </SessionContextProvider>
     </>
   )
 }
