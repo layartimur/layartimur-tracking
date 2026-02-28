@@ -38,18 +38,23 @@ export default function Shipments() {
       // =========================
       let sjNumber = shipment.sj_number;
 
-      if (!sjNumber) {
-        const today = new Date();
-        sjNumber = `SJ/${today.getFullYear()}/${String(
-          today.getMonth() + 1
-        ).padStart(2, "0")}/${shipment.id.slice(0, 6).toUpperCase()}`;
+      if (!shipment.sj_number) {
+  const { data, error } = await supabase
+    .rpc("generate_sj_number");
 
-        await supabase
-          .from("shipments")
-          .update({ sj_number: sjNumber })
-          .eq("id", shipment.id);
-      }
+  if (error) {
+    console.error(error);
+    alert("Gagal generate nomor SJ");
+    return;
+  }
 
+  await supabase
+    .from("shipments")
+    .update({ sj_number: data })
+    .eq("id", shipment.id);
+
+  shipment.sj_number = data;
+}
       // =========================
       // LOAD ITEMS
       // =========================
