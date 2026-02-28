@@ -1,18 +1,7 @@
 import '../styles/globals.css'
 import Head from 'next/head'
-import { useState } from 'react'
-import { SessionContextProvider } from '@supabase/auth-helpers-react'
-import { createBrowserClient } from '@supabase/auth-helpers-nextjs'
 
 export default function App({ Component, pageProps }) {
-
-  const [supabaseClient] = useState(() =>
-    createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    )
-  )
-
   return (
     <>
       <Head>
@@ -26,12 +15,7 @@ export default function App({ Component, pageProps }) {
         <meta name="theme-color" content="#0f172a" />
       </Head>
 
-      <SessionContextProvider
-        supabaseClient={supabaseClient}
-        initialSession={pageProps.initialSession}
-      >
-        <Component {...pageProps} />
-      </SessionContextProvider>
+      <Component {...pageProps} />
     </>
   )
 }
