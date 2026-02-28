@@ -21,9 +21,9 @@ export default function CreateShipment() {
     weight: ""
   });
 
-  // Sekarang item hanya simpan harga per kg & detail
+  // Qty hanya sebagai keterangan
   const [items, setItems] = useState([
-    { name: "", unit: "Kg", price_per_kg: 0, nominal: 0, insurance: false }
+    { name: "", qty: 1, unit: "Pcs", price: 0, nominal: 0, insurance: false }
   ]);
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function CreateShipment() {
   const addItem = () => {
     setItems([
       ...items,
-      { name: "", unit: "Kg", price_per_kg: 0, nominal: 0, insurance: false }
+      { name: "", qty: 1, unit: "Pcs", price: 0, nominal: 0, insurance: false }
     ]);
   };
 
@@ -59,15 +59,20 @@ export default function CreateShipment() {
   };
 
   // ===============================
-  // LOGIC BARU: BERAT × HARGA PER KG
+  // LOGIKA FINAL
+  // Total = (Berat × Harga/kg) + Asuransi
   // ===============================
   const calculateTotal = () => {
     const berat = Number(form.weight) || 0;
     let total = 0;
 
     items.forEach(item => {
-      const hargaPerKg = Number(item.price_per_kg) || 0;
+      const hargaPerKg = Number(item.price) || 0;
+
+      // HANYA BERAT × HARGA
       const subtotal = berat * hargaPerKg;
+
+      // ASURANSI
       const ins = item.insurance
         ? (Number(item.nominal) || 0) * 0.002
         : 0;
@@ -91,9 +96,7 @@ export default function CreateShipment() {
 
     setLoading(true);
 
-    // ===============================
     // INSERT SHIPMENT
-    // ===============================
     const { data: shipment, error } = await supabase
       .from("shipments")
       .insert([{
@@ -114,24 +117,20 @@ export default function CreateShipment() {
       return;
     }
 
-    // ===============================
     // INSERT ITEMS
-    // ===============================
     for (let item of items) {
       await supabase.from("shipment_items").insert([{
         shipment_id: shipment.id,
         name: item.name,
-        qty: Number(form.weight), // qty sekarang = berat
-        unit: "Kg",
-        price: Number(item.price_per_kg), // harga per kg
+        qty: Number(item.qty), // hanya keterangan
+        unit: item.unit,
+        price: Number(item.price), // harga per kg
         nominal: Number(item.nominal),
         insurance: item.insurance
       }]);
     }
 
-    // ===============================
     // INSERT INVOICE
-    // ===============================
     await supabase.from("invoices").insert([{
       shipment_id: shipment.id,
       total: calculateTotal(),
@@ -147,26 +146,10 @@ export default function CreateShipment() {
       <div className="adminContainer">
         <h1>Create Shipment</h1>
 
-        <input
-          name="tracking_number"
-          placeholder="Tracking"
-          onChange={handleChange}
-        />
-        <input
-          name="customer_name"
-          placeholder="Customer"
-          onChange={handleChange}
-        />
-        <input
-          name="phone"
-          placeholder="Phone"
-          onChange={handleChange}
-        />
-        <input
-          name="address"
-          placeholder="Alamat"
-          onChange={handleChange}
-        />
+        <input name="tracking_number" placeholder="Tracking" onChange={handleChange} />
+        <input name="customer_name" placeholder="Customer" onChange={handleChange} />
+        <input name="phone" placeholder="Phone" onChange={handleChange} />
+        <input name="address" placeholder="Alamat" onChange={handleChange} />
 
         <input
           name="weight"
@@ -186,44 +169,45 @@ export default function CreateShipment() {
 
         <h3>Items</h3>
 
-        {items.map((item, index) => (
+        {items.map((item,index)=>(
           <div key={index}>
             <input
               placeholder="Nama Barang"
-              onChange={(e) =>
-                handleItemChange(index, "name", e.target.value)
-              }
+              onChange={(e)=>handleItemChange(index,"name",e.target.value)}
+            />
+
+            <input
+              type="number"
+              placeholder="Jumlah Unit (Keterangan)"
+              onChange={(e)=>handleItemChange(index,"qty",e.target.value)}
+            />
+
+            <input
+              placeholder="Satuan"
+              onChange={(e)=>handleItemChange(index,"unit",e.target.value)}
             />
 
             <input
               type="number"
               placeholder="Harga / Kg"
-              onChange={(e) =>
-                handleItemChange(index, "price_per_kg", e.target.value)
-              }
+              onChange={(e)=>handleItemChange(index,"price",e.target.value)}
             />
 
             <input
               type="number"
               placeholder="Nominal Barang"
-              onChange={(e) =>
-                handleItemChange(index, "nominal", e.target.value)
-              }
+              onChange={(e)=>handleItemChange(index,"nominal",e.target.value)}
             />
 
             <label>
               <input
                 type="checkbox"
-                onChange={(e) =>
-                  handleItemChange(index, "insurance", e.target.checked)
-                }
+                onChange={(e)=>handleItemChange(index,"insurance",e.target.checked)}
               />
               Asuransi 0.2%
             </label>
 
-            <button onClick={() => removeItem(index)}>
-              Hapus
-            </button>
+            <button onClick={()=>removeItem(index)}>Hapus</button>
           </div>
         ))}
 
