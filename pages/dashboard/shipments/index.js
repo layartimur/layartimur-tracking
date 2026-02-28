@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
-import jsPDF from "jspdf";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
+
+let jsPDF; // 🔥 dynamic import holder
 
 export default function Shipments() {
   const [data, setData] = useState([]);
@@ -26,10 +27,15 @@ export default function Shipments() {
 
   const generatePDF = async (shipment) => {
     try {
-      // ============================
-      // 1️⃣ PASTIKAN SJ ADA
-      // ============================
+      // 🔥 Dynamic import jsPDF (ANTI BUILD ERROR VERCEL)
+      if (!jsPDF) {
+        const module = await import("jspdf");
+        jsPDF = module.default;
+      }
 
+      // =========================
+      // GENERATE SJ NUMBER
+      // =========================
       let sjNumber = shipment.sj_number;
 
       if (!sjNumber) {
@@ -44,24 +50,21 @@ export default function Shipments() {
           .eq("id", shipment.id);
       }
 
-      // ============================
-      // 2️⃣ AMBIL ITEMS
-      // ============================
-
+      // =========================
+      // LOAD ITEMS
+      // =========================
       const { data: items } = await supabase
         .from("shipment_items")
         .select("*")
         .eq("shipment_id", shipment.id);
 
-      // ============================
-      // 3️⃣ BUAT PDF
-      // ============================
-
       const doc = new jsPDF("p", "mm", "a4");
       const margin = 15;
       const pageWidth = 210;
 
-      // ===== LOAD LOGO SAFE
+      // =========================
+      // SAFE LOAD LOGO
+      // =========================
       let logoBase64 = null;
 
       try {
@@ -82,10 +85,9 @@ export default function Shipments() {
         doc.addImage(logoBase64, "PNG", margin, 15, 30, 30);
       }
 
-      // ============================
-      // HEADER KIRI
-      // ============================
-
+      // =========================
+      // HEADER LEFT
+      // =========================
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
       doc.text("LAYAR TIMUR", 50, 20);
@@ -98,10 +100,9 @@ export default function Shipments() {
       doc.text("Email : layartimur37@gmail.com", 50, 41);
       doc.text("No. Telp : 0859 7783 3502", 50, 46);
 
-      // ============================
-      // HEADER KANAN (ANTI OVERFLOW)
-      // ============================
-
+      // =========================
+      // HEADER RIGHT (ANTI OVERFLOW)
+      // =========================
       const rightX = 140;
       let rightY = 22;
 
@@ -120,22 +121,20 @@ export default function Shipments() {
 
       doc.line(margin, 55, pageWidth - margin, 55);
 
-      // ============================
+      // =========================
       // CUSTOMER
-      // ============================
-
+      // =========================
       doc.setFont("helvetica", "bold");
       doc.text("KEPADA YTH:", margin, 65);
 
       doc.setFont("helvetica", "normal");
-      doc.text(shipment.customer_name, margin, 72);
+      doc.text(shipment.customer_name || "-", margin, 72);
       doc.text(`Alamat : ${shipment.address || "-"}`, margin, 78);
       doc.text(`Telp : ${shipment.phone || "-"}`, margin, 84);
 
-      // ============================
-      // TABLE
-      // ============================
-
+      // =========================
+      // TABLE HEADER
+      // =========================
       let y = 95;
 
       doc.setFillColor(230, 230, 230);
@@ -164,13 +163,9 @@ export default function Shipments() {
         y += 10;
       });
 
-      // ============================
-      // DOWNLOAD
-      // ============================
-
       doc.save(`Surat_Jalan_${sjNumber}.pdf`);
 
-      loadData(); // refresh table
+      loadData(); // refresh data
 
     } catch (err) {
       console.error("PDF ERROR:", err);
@@ -179,39 +174,37 @@ export default function Shipments() {
   };
 
   return (
-    <div className="adminWrapper">
-      <div className="adminContainer">
-        <h1>Shipments</h1>
+    <div style={{ padding: 40 }}>
+      <h1>Shipments</h1>
 
-        <Link href="/dashboard/shipments/create">
-          <button>+ Create</button>
-        </Link>
+      <Link href="/dashboard/shipments/create">
+        <button style={{ marginBottom: 20 }}>+ Create</button>
+      </Link>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Tracking</th>
-              <th>Customer</th>
-              <th>SJ</th>
-              <th>PDF</th>
+      <table border="1" cellPadding="10" style={{ width: "100%" }}>
+        <thead>
+          <tr>
+            <th>Tracking</th>
+            <th>Customer</th>
+            <th>SJ</th>
+            <th>PDF</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((s) => (
+            <tr key={s.id}>
+              <td>{s.tracking_number}</td>
+              <td>{s.customer_name}</td>
+              <td>{s.sj_number || "-"}</td>
+              <td>
+                <button onClick={() => generatePDF(s)}>
+                  Download
+                </button>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {data.map((s) => (
-              <tr key={s.id}>
-                <td>{s.tracking_number}</td>
-                <td>{s.customer_name}</td>
-                <td>{s.sj_number || "-"}</td>
-                <td>
-                  <button onClick={() => generatePDF(s)}>
-                    Download
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
