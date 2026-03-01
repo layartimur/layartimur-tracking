@@ -124,15 +124,31 @@ export default function Home() {
       </div>
 
       {/* ================= WHATSAPP ================= */}
-      <a
-        href="https://wa.me/6285977833502"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="waPremium"
-      >
-        💬
-      </a>
-
+<a
+  href="https://wa.me/6285977833502"
+  target="_blank"
+  rel="noopener noreferrer"
+  style={{
+    position: "fixed",
+    bottom: 25,
+    right: 25,
+    zIndex: 9999,
+    cursor: "pointer"
+  }}
+>
+  <img
+    src="/chat-timo.png"
+    alt="Chat Timo"
+    style={{
+      width: 120,
+      height: "auto",
+      transition: "0.3s",
+      filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.25))"
+    }}
+    onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.05)"}
+    onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
+  />
+</a>
       {/* ================= FOOTER ================= */}
       <footer id="kontak" className="footerPremium">
         <h3>Layar Timur Express</h3>
