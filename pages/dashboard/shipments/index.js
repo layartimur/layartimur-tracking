@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-let jsPDF; // 🔥 dynamic import holder
+let jsPDF; // dynamic import holder
 
 export default function Shipments() {
   const [data, setData] = useState([]);
@@ -25,39 +25,58 @@ export default function Shipments() {
     setData(data || []);
   };
 
+  // ==========================================
+  // UPDATE STATUS OTOMATIS (NEW FEATURE)
+  // ==========================================
+  const updateStatus = async (id, newStatus) => {
+    const updateData = { status: newStatus };
+
+    if (newStatus === "Dikirim") {
+      updateData.shipped_at = new Date();
+    }
+
+    if (newStatus === "Sampai") {
+      updateData.delivered_at = new Date();
+    }
+
+    await supabase
+      .from("shipments")
+      .update(updateData)
+      .eq("id", id);
+
+    loadData();
+  };
+
+  // ==========================================
+  // GENERATE PDF (TIDAK DIUBAH)
+  // ==========================================
   const generatePDF = async (shipment) => {
     try {
-      // 🔥 Dynamic import jsPDF (ANTI BUILD ERROR VERCEL)
       if (!jsPDF) {
         const module = await import("jspdf");
         jsPDF = module.default;
       }
 
-// =========================
-// GENERATE SJ NUMBER FIX
-// =========================
-let sjNumber = shipment.sj_number;
+      let sjNumber = shipment.sj_number;
 
-if (!sjNumber) {
-  const { data: newSJ, error } = await supabase
-    .rpc("generate_sj_number");
+      if (!sjNumber) {
+        const { data: newSJ, error } = await supabase
+          .rpc("generate_sj_number");
 
-  if (error) {
-    console.error(error);
-    alert("Gagal generate nomor SJ");
-    return;
-  }
+        if (error) {
+          console.error(error);
+          alert("Gagal generate nomor SJ");
+          return;
+        }
 
-  await supabase
-    .from("shipments")
-    .update({ sj_number: newSJ })
-    .eq("id", shipment.id);
+        await supabase
+          .from("shipments")
+          .update({ sj_number: newSJ })
+          .eq("id", shipment.id);
 
-  sjNumber = newSJ; // 🔥 INI YANG PENTING
-}
-      // =========================
-      // LOAD ITEMS
-      // =========================
+        sjNumber = newSJ;
+      }
+
       const { data: items } = await supabase
         .from("shipment_items")
         .select("*")
@@ -67,9 +86,6 @@ if (!sjNumber) {
       const margin = 15;
       const pageWidth = 210;
 
-      // =========================
-      // SAFE LOAD LOGO
-      // =========================
       let logoBase64 = null;
 
       try {
@@ -82,17 +98,12 @@ if (!sjNumber) {
             reader.readAsDataURL(blob);
           });
         }
-      } catch (e) {
-        console.log("Logo tidak ditemukan");
-      }
+      } catch (e) {}
 
       if (logoBase64) {
         doc.addImage(logoBase64, "PNG", margin, 15, 30, 30);
       }
 
-      // =========================
-      // HEADER LEFT
-      // =========================
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
       doc.text("LAYAR TIMUR", 50, 20);
@@ -105,9 +116,6 @@ if (!sjNumber) {
       doc.text("Email : layartimur37@gmail.com", 50, 41);
       doc.text("No. Telp : 0859 7783 3502", 50, 46);
 
-      // =========================
-      // HEADER RIGHT (ANTI OVERFLOW)
-      // =========================
       const rightX = 140;
       let rightY = 22;
 
@@ -126,9 +134,6 @@ if (!sjNumber) {
 
       doc.line(margin, 55, pageWidth - margin, 55);
 
-      // =========================
-      // CUSTOMER
-      // =========================
       doc.setFont("helvetica", "bold");
       doc.text("KEPADA YTH:", margin, 65);
 
@@ -137,9 +142,6 @@ if (!sjNumber) {
       doc.text(`Alamat : ${shipment.address || "-"}`, margin, 78);
       doc.text(`Telp : ${shipment.phone || "-"}`, margin, 84);
 
-      // =========================
-      // TABLE HEADER
-      // =========================
       let y = 95;
 
       doc.setFillColor(230, 230, 230);
@@ -153,28 +155,24 @@ if (!sjNumber) {
       doc.text("Keterangan", margin + 150, y + 7);
 
       y += 10;
-
       doc.setFont("helvetica", "normal");
 
       items?.forEach((item, index) => {
         doc.rect(margin, y, pageWidth - margin * 2, 10);
-
         doc.text(String(index + 1), margin + 5, y + 7);
         doc.text(item.name || "-", margin + 20, y + 7);
         doc.text(String(item.qty || 0), margin + 115, y + 7);
         doc.text(item.unit || "-", margin + 130, y + 7);
         doc.text("-", margin + 150, y + 7);
-
         y += 10;
       });
 
       doc.save(`Surat_Jalan_${sjNumber}.pdf`);
-
-      loadData(); // refresh data
+      loadData();
 
     } catch (err) {
       console.error("PDF ERROR:", err);
-      alert("Gagal generate PDF. Cek console.");
+      alert("Gagal generate PDF.");
     }
   };
 
@@ -191,8 +189,10 @@ if (!sjNumber) {
           <tr>
             <th>Tracking</th>
             <th>Customer</th>
+            <th>Status</th>
             <th>SJ</th>
             <th>PDF</th>
+            <th>Aksi</th>
           </tr>
         </thead>
         <tbody>
@@ -200,11 +200,25 @@ if (!sjNumber) {
             <tr key={s.id}>
               <td>{s.tracking_number}</td>
               <td>{s.customer_name}</td>
+              <td>{s.status}</td>
               <td>{s.sj_number || "-"}</td>
               <td>
                 <button onClick={() => generatePDF(s)}>
                   Download
                 </button>
+              </td>
+              <td>
+                {s.status === "Diproses" && (
+                  <button onClick={() => updateStatus(s.id, "Dikirim")}>
+                    Kirim
+                  </button>
+                )}
+
+                {s.status === "Dikirim" && (
+                  <button onClick={() => updateStatus(s.id, "Sampai")}>
+                    Tandai Sampai
+                  </button>
+                )}
               </td>
             </tr>
           ))}

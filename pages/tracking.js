@@ -30,27 +30,30 @@ export default function Tracking() {
 
     setLoading(true);
 
+    const cleanResi = resi.trim().toUpperCase();
+
     const { data: result, error } = await supabase
-      .from("PENGIRIMAN")
+      .from("shipments")
       .select("*")
-      .eq("tracking_number", resi.trim())
-      .single();
+      .eq("tracking_number", cleanResi);
 
     setLoading(false);
 
-    if (error || !result) {
+    if (error || !result || result.length === 0) {
       setError("Resi tidak ditemukan");
       return;
     }
 
-    const hp = result.no_telpon || "";
+    const shipment = result[0];
+
+    const hp = shipment.phone || "";
 
     if (!hp.endsWith(last4)) {
       setError("4 digit terakhir nomor HP tidak sesuai");
       return;
     }
 
-    setData(result);
+    setData(shipment);
   };
 
   return (
@@ -69,7 +72,7 @@ export default function Tracking() {
             className="trackingInput"
             placeholder="Masukkan Nomor Resi"
             value={resi}
-            onChange={(e)=>setResi(e.target.value)}
+            onChange={(e)=>setResi(e.target.value.toUpperCase())}
           />
 
           <input
@@ -96,16 +99,70 @@ export default function Tracking() {
 
         {data && (
           <div style={{ marginTop:30, textAlign:"left" }}>
+
             <p><strong>Tracking:</strong> {data.tracking_number}</p>
-            <p><strong>Nama:</strong> {data.nama_pelanggan}</p>
-            <p><strong>Status:</strong> {data.status_pengiriman}</p>
-            <p><strong>Status Pembayaran:</strong> {data.status_pembayaran}</p>
-            <p><strong>Total Harga:</strong> Rp {Number(data.total_harga).toLocaleString()}</p>
+            <p><strong>Nama:</strong> {data.customer_name}</p>
+            <p><strong>Status:</strong> {data.status}</p>
+            <p><strong>Berat:</strong> {data.weight} kg</p>
+
+            <div style={{ marginTop:30 }}>
+              <h3>Progress Pengiriman</h3>
+
+              <TimelineItem
+                active={true}
+                title="Diproses"
+                date={data.created_at}
+              />
+
+              <TimelineItem
+                active={data.status === "Dikirim" || data.status === "Sampai"}
+                title="Dikirim"
+                date={data.shipped_at}
+              />
+
+              <TimelineItem
+                active={data.status === "Sampai"}
+                title="Sampai Tujuan"
+                date={data.delivered_at}
+              />
+
+            </div>
           </div>
         )}
 
       </div>
 
+    </div>
+  );
+}
+
+
+// ================================
+// TIMELINE COMPONENT (DI LUAR RETURN)
+// ================================
+function TimelineItem({ active, title, date }) {
+  return (
+    <div style={{
+      display:"flex",
+      alignItems:"center",
+      marginBottom:15,
+      opacity: active ? 1 : 0.4
+    }}>
+      <div style={{
+        width:14,
+        height:14,
+        borderRadius:"50%",
+        background: active ? "#22c55e" : "#d1d5db",
+        marginRight:12
+      }} />
+      <div>
+        <strong>{title}</strong>
+        {date && (
+          <div style={{ fontSize:12, color:"#6b7280" }}>
+            {new Date(date).toLocaleString()}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
