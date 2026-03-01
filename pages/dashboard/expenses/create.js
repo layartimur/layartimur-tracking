@@ -10,7 +10,8 @@ export default function CreateExpense() {
   const [form, setForm] = useState({
     shipment_id: "",
     description: "",
-    amount: ""
+    amount: "",
+    category: ""
   });
 
   useEffect(() => {
@@ -31,8 +32,8 @@ export default function CreateExpense() {
   };
 
   const handleSubmit = async () => {
-    if (!form.shipment_id || !form.amount) {
-      alert("Shipment & Amount wajib diisi");
+    if (!form.shipment_id || !form.amount || !form.category) {
+      alert("Shipment, Amount, dan Category wajib diisi");
       return;
     }
 
@@ -44,7 +45,8 @@ export default function CreateExpense() {
         {
           shipment_id: form.shipment_id,
           description: form.description,
-          amount: Number(form.amount)
+          amount: Number(form.amount),
+          category: form.category
         }
       ]);
 
@@ -64,7 +66,7 @@ export default function CreateExpense() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 15, maxWidth: 400 }}>
 
-        <select name="shipment_id" onChange={handleChange}>
+        <select name="shipment_id" value={form.shipment_id} onChange={handleChange}>
           <option value="">Pilih Shipment</option>
           {shipments.map(s => (
             <option key={s.id} value={s.id}>
@@ -73,10 +75,23 @@ export default function CreateExpense() {
           ))}
         </select>
 
+        {/* 🔥 CATEGORY BARU */}
+        <select name="category" value={form.category} onChange={handleChange}>
+          <option value="">Pilih Kategori</option>
+          <option value="BBM">BBM</option>
+          <option value="Sopir">Sopir</option>
+          <option value="Tol">Tol</option>
+          <option value="Bongkar">Bongkar Muat</option>
+          <option value="Admin">Admin</option>
+          <option value="Operasional">Operasional</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+
         <input
           type="text"
           name="description"
           placeholder="Keterangan (Solar, Toll, dll)"
+          value={form.description}
           onChange={handleChange}
         />
 
@@ -84,6 +99,7 @@ export default function CreateExpense() {
           type="number"
           name="amount"
           placeholder="Jumlah Pengeluaran"
+          value={form.amount}
           onChange={handleChange}
         />
 
