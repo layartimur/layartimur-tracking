@@ -123,32 +123,61 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ================= WHATSAPP ================= */}
-<a
-  href="https://wa.me/6285977833502"
-  target="_blank"
-  rel="noopener noreferrer"
-  style={{
-    position: "fixed",
-    bottom: 25,
-    right: 25,
-    zIndex: 9999,
-    cursor: "pointer"
-  }}
->
-  <img
-    src="/chat-timo.png"
-    alt="Chat Timo"
-    style={{
-      width: 120,
-      height: "auto",
-      transition: "0.3s",
-      filter: "drop-shadow(0 10px 20px rgba(0,0,0,0.25))"
-    }}
-    onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.05)"}
-    onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
-  />
-</a>
+      {/* ================= WHATSAPP + BUBBLE ================= */}
+      <div
+        style={{
+          position: "fixed",
+          bottom: 25,
+          right: 25,
+          zIndex: 9999,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: 10
+        }}
+      >
+        {/* Bubble Text */}
+        <div
+          style={{
+            background: "white",
+            color: "#0f172a",
+            padding: "8px 16px",
+            borderRadius: 20,
+            fontSize: 14,
+            fontWeight: 600,
+            boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+            animation: "fadeInUp 0.6s ease"
+          }}
+        >
+          Titipanmu, Urusanku
+        </div>
+
+        {/* Chat Mascot */}
+        <a
+          href="https://wa.me/6285977833502"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ cursor: "pointer" }}
+        >
+          <img
+            src="/chat-timo.png"
+            alt="Chat Timo"
+            style={{
+              width: 120,
+              height: "auto",
+              transition: "0.3s",
+              filter: "drop-shadow(0 12px 25px rgba(0,0,0,0.25))"
+            }}
+            onMouseOver={(e) =>
+              (e.currentTarget.style.transform = "scale(1.05)")
+            }
+            onMouseOut={(e) =>
+              (e.currentTarget.style.transform = "scale(1)")
+            }
+          />
+        </a>
+      </div>
+
       {/* ================= FOOTER ================= */}
       <footer id="kontak" className="footerPremium">
         <h3>Layar Timur Express</h3>
@@ -160,6 +189,20 @@ export default function Home() {
         <p>Email: layartimur37@gmail.com</p>
         <p>© {new Date().getFullYear()} All Rights Reserved</p>
       </footer>
+
+      {/* ================= ANIMATION STYLE ================= */}
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
 
     </div>
   );
