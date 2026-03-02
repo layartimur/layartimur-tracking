@@ -25,9 +25,6 @@ export default function Shipments() {
     setData(data || []);
   };
 
-  // ==========================================
-  // UPDATE STATUS OTOMATIS (NEW FEATURE)
-  // ==========================================
   const updateStatus = async (id, newStatus) => {
     const updateData = { status: newStatus };
 
@@ -47,9 +44,6 @@ export default function Shipments() {
     loadData();
   };
 
-  // ==========================================
-  // GENERATE PDF (TIDAK DIUBAH)
-  // ==========================================
   const generatePDF = async (shipment) => {
     try {
       if (!jsPDF) {
@@ -60,8 +54,7 @@ export default function Shipments() {
       let sjNumber = shipment.sj_number;
 
       if (!sjNumber) {
-        const { data: newSJ, error } = await supabase
-          .rpc("generate_sj_number");
+        const { data: newSJ, error } = await supabase.rpc("generate_sj_number");
 
         if (error) {
           console.error(error);
@@ -169,7 +162,6 @@ export default function Shipments() {
 
       doc.save(`Surat_Jalan_${sjNumber}.pdf`);
       loadData();
-
     } catch (err) {
       console.error("PDF ERROR:", err);
       alert("Gagal generate PDF.");
@@ -177,7 +169,7 @@ export default function Shipments() {
   };
 
   return (
-    <div style={{ padding: 40 }}>
+    <div style={{ padding: 40, color: "white" }}>
       <h1>Shipments</h1>
 
       <Link href="/dashboard/shipments/create">
