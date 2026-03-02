@@ -51,6 +51,11 @@ export default function Invoices() {
     setLoadingId(null);
   };
 
+  const formatRupiah = (angka) => {
+    const number = Number(angka) || 0;
+    return "Rp " + number.toLocaleString("id-ID");
+  };
+
   const generateInvoicePDF = async (invoice) => {
     try {
       if (!jsPDF) {
@@ -93,7 +98,6 @@ export default function Invoices() {
       const margin = 15;
       const pageWidth = 210;
 
-      // ================= LOGO =================
       try {
         const logoBase64 = await fetch("/logosj.png")
           .then(res => res.blob())
@@ -109,7 +113,6 @@ export default function Invoices() {
         doc.addImage(logoBase64, "PNG", margin, 15, 30, 30);
       } catch {}
 
-      // ================= HEADER =================
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
       doc.text("LAYAR TIMUR", 50, 20);
@@ -141,7 +144,6 @@ export default function Invoices() {
 
       doc.line(margin, 55, pageWidth - margin, 55);
 
-      // ================= CUSTOMER =================
       doc.setFont("helvetica", "bold");
       doc.text("Ditagihkan Kepada:", margin, 65);
 
@@ -150,7 +152,6 @@ export default function Invoices() {
       doc.text(`Alamat : ${shipment.address || "-"}`, margin, 78);
       doc.text(`Telp : ${shipment.phone || "-"}`, margin, 84);
 
-      // ================= TABLE =================
       let y = 95;
       let grandTotal = 0;
       let insuranceTotal = 0;
@@ -181,13 +182,7 @@ export default function Invoices() {
 
         doc.text(item.name || "-", margin + 5, y + 7);
         doc.text(String(berat), margin + 80, y + 7);
-
-        doc.text(
-          `Rp ${hargaPerKg.toLocaleString()}`,
-          margin + 100,
-          y + 7
-        );
-
+        doc.text(`Rp ${hargaPerKg.toLocaleString()}`, margin + 100, y + 7);
         doc.text(
           `Rp ${subtotal.toLocaleString()}`,
           pageWidth - margin,
@@ -201,7 +196,6 @@ export default function Invoices() {
       y += 10;
 
       doc.setFont("helvetica", "bold");
-
       doc.text(
         `Total Asuransi : Rp ${insuranceTotal.toLocaleString()}`,
         pageWidth - margin,
@@ -218,7 +212,6 @@ export default function Invoices() {
         { align: "right" }
       );
 
-      // ================= PAYMENT =================
       y += 20;
 
       doc.setFont("helvetica", "bold");
@@ -232,7 +225,6 @@ export default function Invoices() {
       y += 7;
       doc.text("No.Rek : 3141599311", margin, y);
 
-      // ================= WATERMARK =================
       if (invoice.status === "Paid") {
         doc.setTextColor(0, 150, 0);
         doc.setFontSize(50);
@@ -260,6 +252,7 @@ export default function Invoices() {
             <tr>
               <th>Tracking</th>
               <th>Customer</th>
+              <th>Total Tagihan</th>
               <th>Status</th>
               <th>PDF</th>
               <th>Aksi</th>
@@ -270,6 +263,9 @@ export default function Invoices() {
               <tr key={item.id}>
                 <td>{item.shipments?.tracking_number}</td>
                 <td>{item.shipments?.customer_name}</td>
+                <td style={{ fontWeight: "bold" }}>
+                  {formatRupiah(item.total)}
+                </td>
                 <td>{item.status}</td>
                 <td>
                   <button onClick={() => generateInvoicePDF(item)}>
