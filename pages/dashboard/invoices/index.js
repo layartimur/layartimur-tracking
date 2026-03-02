@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import * as XLSX from "xlsx"; // ✅ TAMBAHAN EXPORT EXCEL
 
 let jsPDF;
 
@@ -54,6 +55,30 @@ export default function Invoices() {
   const formatRupiah = (angka) => {
     const number = Number(angka) || 0;
     return "Rp " + number.toLocaleString("id-ID");
+  };
+
+  // ✅ FUNCTION EXPORT EXCEL (TAMBAHAN SAJA)
+  const exportToExcel = () => {
+    if (!data || data.length === 0) {
+      alert("Tidak ada data untuk diexport");
+      return;
+    }
+
+    const exportData = data.map(item => ({
+      Tracking: item.shipments?.tracking_number || "-",
+      Customer: item.shipments?.customer_name || "-",
+      "Total Tagihan": item.total || 0,
+      Status: item.status || "-",
+      "Tanggal Invoice": item.created_at
+        ? new Date(item.created_at).toLocaleDateString("id-ID")
+        : "-"
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Invoices");
+
+    XLSX.writeFile(workbook, "Laporan_Invoice.xlsx");
   };
 
   const generateInvoicePDF = async (invoice) => {
@@ -246,6 +271,21 @@ export default function Invoices() {
     <div className="adminWrapper">
       <div className="adminContainer">
         <h1>Invoices</h1>
+
+        {/* ✅ TOMBOL EXPORT EXCEL (TAMBAHAN SAJA) */}
+        <button
+          onClick={exportToExcel}
+          style={{
+            marginBottom: "15px",
+            padding: "8px 15px",
+            backgroundColor: "#28a745",
+            color: "white",
+            border: "none",
+            cursor: "pointer"
+          }}
+        >
+          Export Excel
+        </button>
 
         <table>
           <thead>
