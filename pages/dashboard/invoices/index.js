@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import * as XLSX from "xlsx"; // ✅ TAMBAHAN EXPORT EXCEL
+import * as XLSX from "xlsx";
 
 let jsPDF;
 
@@ -57,7 +57,6 @@ export default function Invoices() {
     return "Rp " + number.toLocaleString("id-ID");
   };
 
-  // ✅ FUNCTION EXPORT EXCEL (TAMBAHAN SAJA)
   const exportToExcel = () => {
     if (!data || data.length === 0) {
       alert("Tidak ada data untuk diexport");
@@ -123,21 +122,22 @@ export default function Invoices() {
       const margin = 15;
       const pageWidth = 210;
 
+      // ================= LOGO =================
       try {
         const logoBase64 = await fetch("/logosj.png")
           .then(res => res.blob())
-          .then(
-            blob =>
-              new Promise(resolve => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.readAsDataURL(blob);
-              })
+          .then(blob =>
+            new Promise(resolve => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.readAsDataURL(blob);
+            })
           );
 
         doc.addImage(logoBase64, "PNG", margin, 15, 30, 30);
       } catch {}
 
+      // ================= HEADER =================
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
       doc.text("LAYAR TIMUR", 50, 20);
@@ -169,6 +169,7 @@ export default function Invoices() {
 
       doc.line(margin, 55, pageWidth - margin, 55);
 
+      // ================= CUSTOMER =================
       doc.setFont("helvetica", "bold");
       doc.text("Ditagihkan Kepada:", margin, 65);
 
@@ -177,6 +178,7 @@ export default function Invoices() {
       doc.text(`Alamat : ${shipment.address || "-"}`, margin, 78);
       doc.text(`Telp : ${shipment.phone || "-"}`, margin, 84);
 
+      // ================= TABLE =================
       let y = 95;
       let grandTotal = 0;
       let insuranceTotal = 0;
@@ -237,7 +239,47 @@ export default function Invoices() {
         { align: "right" }
       );
 
+      // ================= TANDA TANGAN =================
       y += 20;
+
+      const rightAreaX = pageWidth - margin - 60;
+      let signY = y;
+
+      doc.setFont("helvetica", "normal");
+      doc.text("Hormat kami", rightAreaX, signY);
+
+      try {
+        const res = await fetch("/ttd.png");
+        if (res.ok) {
+          const blob = await res.blob();
+          const ttdBase64 = await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+
+          doc.addImage(ttdBase64, "PNG", rightAreaX - 5, signY + 5, 50, 25);
+        }
+      } catch {}
+
+      try {
+        const res = await fetch("/cap.png");
+        if (res.ok) {
+          const blob = await res.blob();
+          const capBase64 = await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+
+          doc.addImage(capBase64, "PNG", rightAreaX + 10, signY + 8, 35, 35);
+        }
+      } catch {}
+
+      doc.text("Albertus Penti", rightAreaX, signY + 40);
+
+      // ================= PAYMENT =================
+      y += 60;
 
       doc.setFont("helvetica", "bold");
       doc.text("Pembayaran ditujukan kepada:", margin, y);
@@ -250,6 +292,7 @@ export default function Invoices() {
       y += 7;
       doc.text("No.Rek : 3141599311", margin, y);
 
+      // ================= WATERMARK =================
       if (invoice.status === "Paid") {
         doc.setTextColor(0, 150, 0);
         doc.setFontSize(50);
@@ -272,7 +315,6 @@ export default function Invoices() {
       <div className="adminContainer">
         <h1>Invoices</h1>
 
-        {/* ✅ TOMBOL EXPORT EXCEL (TAMBAHAN SAJA) */}
         <button
           onClick={exportToExcel}
           style={{
