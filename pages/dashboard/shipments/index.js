@@ -150,18 +150,26 @@ export default function Shipments() {
 
       items?.forEach((item, index) => {
         doc.rect(margin, y, pageWidth - margin * 2, 10);
+
         doc.text(String(index + 1), margin + 5, y + 7);
         doc.text(item.name || "-", margin + 20, y + 7);
         doc.text(String(item.qty || 0), margin + 115, y + 7);
         doc.text(item.unit || "-", margin + 130, y + 7);
-        doc.text("-", margin + 150, y + 7);
+
+        // ✅ FIX: Ambil keterangan dari database
+        let ket = "-";
+        if (item.keterangan && item.keterangan.trim() !== "") {
+          ket = item.keterangan;
+        }
+
+        doc.text(String(ket), margin + 150, y + 7);
+
         y += 10;
       });
 
       // ================= TTD & PENERIMA =================
       let bottomY = y + 25;
 
-      // PENGIRIM
       doc.setFont("helvetica", "bold");
       doc.text("Pengirim,", 30, bottomY);
 
@@ -194,7 +202,6 @@ export default function Shipments() {
       doc.setFont("helvetica", "normal");
       doc.text("Albertus Penti", 30, bottomY + 40);
 
-      // PENERIMA (KOSONGKAN NAMA)
       doc.setFont("helvetica", "bold");
       doc.text("Penerima,", 140, bottomY);
 

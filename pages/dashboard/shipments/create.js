@@ -21,9 +21,17 @@ export default function CreateShipment() {
     weight: ""
   });
 
-  // Qty hanya sebagai keterangan
+  // ✅ TAMBAHAN keterangan
   const [items, setItems] = useState([
-    { name: "", qty: 1, unit: "Pcs", price: 0, nominal: 0, insurance: false }
+    { 
+      name: "", 
+      qty: 1, 
+      unit: "Pcs", 
+      price: 0, 
+      nominal: 0, 
+      insurance: false,
+      keterangan: "" // ✅ BARU
+    }
   ]);
 
   useEffect(() => {
@@ -48,7 +56,15 @@ export default function CreateShipment() {
   const addItem = () => {
     setItems([
       ...items,
-      { name: "", qty: 1, unit: "Pcs", price: 0, nominal: 0, insurance: false }
+      { 
+        name: "", 
+        qty: 1, 
+        unit: "Pcs", 
+        price: 0, 
+        nominal: 0, 
+        insurance: false,
+        keterangan: "" // ✅ BARU
+      }
     ]);
   };
 
@@ -58,21 +74,14 @@ export default function CreateShipment() {
     setItems(updated);
   };
 
-  // ===============================
-  // LOGIKA FINAL
-  // Total = (Berat × Harga/kg) + Asuransi
-  // ===============================
   const calculateTotal = () => {
     const berat = Number(form.weight) || 0;
     let total = 0;
 
     items.forEach(item => {
       const hargaPerKg = Number(item.price) || 0;
-
-      // HANYA BERAT × HARGA
       const subtotal = berat * hargaPerKg;
 
-      // ASURANSI
       const ins = item.insurance
         ? (Number(item.nominal) || 0) * 0.002
         : 0;
@@ -96,7 +105,6 @@ export default function CreateShipment() {
 
     setLoading(true);
 
-    // INSERT SHIPMENT
     const { data: shipment, error } = await supabase
       .from("shipments")
       .insert([{
@@ -118,29 +126,30 @@ export default function CreateShipment() {
     }
 
     // ==========================
-// INSERT ITEMS (SAFE)
-// ==========================
-const itemsToInsert = items.map(item => ({
-  shipment_id: shipment.id,
-  name: item.name || "-",
-  qty: Number(item.qty) || 0,
-  unit: item.unit || "-",
-  price: Number(item.price) || 0,
-  item_value: Number(item.nominal) || 0,
-  insurance: item.insurance || false
-}));
+    // INSERT ITEMS (UPGRADE)
+    // ==========================
+    const itemsToInsert = items.map(item => ({
+      shipment_id: shipment.id,
+      name: item.name || "-",
+      qty: Number(item.qty) || 0,
+      unit: item.unit || "-",
+      price: Number(item.price) || 0,
+      item_value: Number(item.nominal) || 0,
+      insurance: item.insurance || false,
+      keterangan: item.keterangan || "" // ✅ BARU
+    }));
 
-const { error: itemError } = await supabase
-  .from("shipment_items")
-  .insert(itemsToInsert);
+    const { error: itemError } = await supabase
+      .from("shipment_items")
+      .insert(itemsToInsert);
 
-if (itemError) {
-  console.error("ITEM INSERT ERROR:", itemError);
-  alert("Gagal simpan item");
-  setLoading(false);
-  return;
-}
-    // INSERT INVOICE
+    if (itemError) {
+      console.error("ITEM INSERT ERROR:", itemError);
+      alert("Gagal simpan item");
+      setLoading(false);
+      return;
+    }
+
     await supabase.from("invoices").insert([{
       shipment_id: shipment.id,
       total: calculateTotal(),
@@ -188,13 +197,19 @@ if (itemError) {
 
             <input
               type="number"
-              placeholder="Jumlah Unit (Keterangan)"
+              placeholder="Jumlah Unit"
               onChange={(e)=>handleItemChange(index,"qty",e.target.value)}
             />
 
             <input
               placeholder="Satuan"
               onChange={(e)=>handleItemChange(index,"unit",e.target.value)}
+            />
+
+            {/* ✅ INPUT BARU */}
+            <input
+              placeholder="Keterangan (contoh: 11 koli / 2 dos)"
+              onChange={(e)=>handleItemChange(index,"keterangan",e.target.value)}
             />
 
             <input
@@ -231,4 +246,4 @@ if (itemError) {
       </div>
     </div>
   );
-}	
+}
