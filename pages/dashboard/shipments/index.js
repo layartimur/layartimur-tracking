@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-let jsPDF; // dynamic import holder
+let jsPDF;
 
 export default function Shipments() {
   const [data, setData] = useState([]);
@@ -57,7 +57,6 @@ export default function Shipments() {
         const { data: newSJ, error } = await supabase.rpc("generate_sj_number");
 
         if (error) {
-          console.error(error);
           alert("Gagal generate nomor SJ");
           return;
         }
@@ -79,24 +78,21 @@ export default function Shipments() {
       const margin = 15;
       const pageWidth = 210;
 
-      let logoBase64 = null;
-
+      // ================= LOGO =================
       try {
         const res = await fetch("/logosj.png");
         if (res.ok) {
           const blob = await res.blob();
-          logoBase64 = await new Promise((resolve) => {
+          const logoBase64 = await new Promise((resolve) => {
             const reader = new FileReader();
             reader.onloadend = () => resolve(reader.result);
             reader.readAsDataURL(blob);
           });
+          doc.addImage(logoBase64, "PNG", margin, 15, 30, 30);
         }
-      } catch (e) {}
+      } catch {}
 
-      if (logoBase64) {
-        doc.addImage(logoBase64, "PNG", margin, 15, 30, 30);
-      }
-
+      // ================= HEADER =================
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
       doc.text("LAYAR TIMUR", 50, 20);
@@ -127,6 +123,7 @@ export default function Shipments() {
 
       doc.line(margin, 55, pageWidth - margin, 55);
 
+      // ================= CUSTOMER =================
       doc.setFont("helvetica", "bold");
       doc.text("KEPADA YTH:", margin, 65);
 
@@ -135,6 +132,7 @@ export default function Shipments() {
       doc.text(`Alamat : ${shipment.address || "-"}`, margin, 78);
       doc.text(`Telp : ${shipment.phone || "-"}`, margin, 84);
 
+      // ================= TABLE =================
       let y = 95;
 
       doc.setFillColor(230, 230, 230);
@@ -160,8 +158,49 @@ export default function Shipments() {
         y += 10;
       });
 
+      // ================= TTD & PENERIMA =================
+      let bottomY = y + 25;
+
+      // PENGIRIM
+      doc.setFont("helvetica", "bold");
+      doc.text("Pengirim,", 30, bottomY);
+
+      try {
+        const res = await fetch("/ttd.png");
+        if (res.ok) {
+          const blob = await res.blob();
+          const ttdBase64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+          doc.addImage(ttdBase64, "PNG", 25, bottomY + 5, 40, 25);
+        }
+      } catch {}
+
+      try {
+        const res = await fetch("/cap.png");
+        if (res.ok) {
+          const blob = await res.blob();
+          const capBase64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+          doc.addImage(capBase64, "PNG", 45, bottomY + 8, 30, 30);
+        }
+      } catch {}
+
+      doc.setFont("helvetica", "normal");
+      doc.text("Albertus Penti", 30, bottomY + 40);
+
+      // PENERIMA (KOSONGKAN NAMA)
+      doc.setFont("helvetica", "bold");
+      doc.text("Penerima,", 140, bottomY);
+
       doc.save(`Surat_Jalan_${sjNumber}.pdf`);
       loadData();
+
     } catch (err) {
       console.error("PDF ERROR:", err);
       alert("Gagal generate PDF.");
