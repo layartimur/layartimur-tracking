@@ -33,7 +33,34 @@ export default function Shipments() {
     }
 
     if (newStatus === "Sampai") {
-      updateData.delivered_at = new Date();
+      const deliveredDate = new Date();
+      updateData.delivered_at = deliveredDate;
+
+      // 🔥 CEK DULU APAKAH INVOICE SUDAH ADA
+      const { data: invoiceExist } = await supabase
+        .from("invoices")
+        .select("id")
+        .eq("shipment_id", id)
+        .single();
+
+      if (invoiceExist) {
+        // ✅ UPDATE invoice_date
+        await supabase
+          .from("invoices")
+          .update({
+            invoice_date: deliveredDate
+          })
+          .eq("shipment_id", id);
+      } else {
+        // ✅ JIKA BELUM ADA, BUAT BARU
+        await supabase
+          .from("invoices")
+          .insert([{
+            shipment_id: id,
+            status: "Unpaid",
+            invoice_date: deliveredDate
+          }]);
+      }
     }
 
     await supabase
@@ -78,7 +105,6 @@ export default function Shipments() {
       const margin = 15;
       const pageWidth = 210;
 
-      // ================= LOGO =================
       try {
         const res = await fetch("/logosj.png");
         if (res.ok) {
@@ -92,7 +118,6 @@ export default function Shipments() {
         }
       } catch {}
 
-      // ================= HEADER =================
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
       doc.text("LAYAR TIMUR", 50, 20);
@@ -123,7 +148,6 @@ export default function Shipments() {
 
       doc.line(margin, 55, pageWidth - margin, 55);
 
-      // ================= CUSTOMER =================
       doc.setFont("helvetica", "bold");
       doc.text("KEPADA YTH:", margin, 65);
 
@@ -132,7 +156,6 @@ export default function Shipments() {
       doc.text(`Alamat : ${shipment.address || "-"}`, margin, 78);
       doc.text(`Telp : ${shipment.phone || "-"}`, margin, 84);
 
-      // ================= TABLE =================
       let y = 95;
 
       doc.setFillColor(230, 230, 230);
@@ -156,7 +179,6 @@ export default function Shipments() {
         doc.text(String(item.qty || 0), margin + 115, y + 7);
         doc.text(item.unit || "-", margin + 130, y + 7);
 
-        // ✅ FIX: Ambil keterangan dari database
         let ket = "-";
         if (item.keterangan && item.keterangan.trim() !== "") {
           ket = item.keterangan;
@@ -167,7 +189,6 @@ export default function Shipments() {
         y += 10;
       });
 
-      // ================= TTD & PENERIMA =================
       let bottomY = y + 25;
 
       doc.setFont("helvetica", "bold");

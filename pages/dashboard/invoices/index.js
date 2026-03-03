@@ -57,6 +57,15 @@ export default function Invoices() {
     return "Rp " + number.toLocaleString("id-ID");
   };
 
+  const formatDateShort = (dateString) => {
+    if (!dateString) return "-";
+    const d = new Date(dateString);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = String(d.getFullYear()).slice(-2);
+    return `${day}/${month}/${year}`;
+  };
+
   const exportToExcel = () => {
     if (!data || data.length === 0) {
       alert("Tidak ada data untuk diexport");
@@ -68,8 +77,8 @@ export default function Invoices() {
       Customer: item.shipments?.customer_name || "-",
       "Total Tagihan": item.total || 0,
       Status: item.status || "-",
-      "Tanggal Invoice": item.created_at
-        ? new Date(item.created_at).toLocaleDateString("id-ID")
+      "Tanggal Invoice": item.invoice_date
+        ? new Date(item.invoice_date).toLocaleDateString("id-ID")
         : "-"
     }));
 
@@ -122,7 +131,6 @@ export default function Invoices() {
       const margin = 15;
       const pageWidth = 210;
 
-      // ================= LOGO =================
       try {
         const logoBase64 = await fetch("/logosj.png")
           .then(res => res.blob())
@@ -137,7 +145,7 @@ export default function Invoices() {
         doc.addImage(logoBase64, "PNG", margin, 15, 30, 30);
       } catch {}
 
-      // ================= HEADER =================
+      // HEADER
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
       doc.text("LAYAR TIMUR", 50, 20);
@@ -154,22 +162,30 @@ export default function Invoices() {
       doc.setFontSize(18);
       doc.text("INVOICE", pageWidth - margin, 20, { align: "right" });
 
-      doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
-      doc.text(String(safeInvoiceNumber), pageWidth - margin, 30, {
-        align: "right"
-      });
+      doc.setFontSize(11);
+
+      let rightY = 30;
 
       doc.text(
-        `SJ : ${shipment.sj_number || "-"}`,
+        `Tanggal Invoice : ${formatDateShort(invoice.invoice_date)}`,
         pageWidth - margin,
-        36,
+        rightY,
+        { align: "right" }
+      );
+
+      rightY += 8;
+
+      doc.text(
+        `Invoice SJ      : ${shipment.sj_number || "-"}`,
+        pageWidth - margin,
+        rightY,
         { align: "right" }
       );
 
       doc.line(margin, 55, pageWidth - margin, 55);
 
-      // ================= CUSTOMER =================
+      // CUSTOMER
       doc.setFont("helvetica", "bold");
       doc.text("Ditagihkan Kepada:", margin, 65);
 
@@ -178,7 +194,7 @@ export default function Invoices() {
       doc.text(`Alamat : ${shipment.address || "-"}`, margin, 78);
       doc.text(`Telp : ${shipment.phone || "-"}`, margin, 84);
 
-      // ================= TABLE =================
+      // TABLE
       let y = 95;
       let grandTotal = 0;
       let insuranceTotal = 0;
@@ -198,7 +214,6 @@ export default function Invoices() {
       (items || []).forEach((item) => {
         const hargaPerKg = Number(item.price) || 0;
         const subtotal = berat * hargaPerKg;
-
         const nominal = Number(item.item_value || item.nominal) || 0;
         const ins = item.insurance ? nominal * 0.002 : 0;
 
@@ -239,9 +254,8 @@ export default function Invoices() {
         { align: "right" }
       );
 
-      // ================= TANDA TANGAN =================
+      // TTD
       y += 20;
-
       const rightAreaX = pageWidth - margin - 60;
       let signY = y;
 
@@ -257,7 +271,6 @@ export default function Invoices() {
             reader.onloadend = () => resolve(reader.result);
             reader.readAsDataURL(blob);
           });
-
           doc.addImage(ttdBase64, "PNG", rightAreaX - 5, signY + 5, 50, 25);
         }
       } catch {}
@@ -271,16 +284,14 @@ export default function Invoices() {
             reader.onloadend = () => resolve(reader.result);
             reader.readAsDataURL(blob);
           });
-
           doc.addImage(capBase64, "PNG", rightAreaX + 10, signY + 8, 35, 35);
         }
       } catch {}
 
       doc.text("Albertus Penti", rightAreaX, signY + 40);
 
-      // ================= PAYMENT =================
+      // PAYMENT
       y += 60;
-
       doc.setFont("helvetica", "bold");
       doc.text("Pembayaran ditujukan kepada:", margin, y);
 
@@ -292,7 +303,6 @@ export default function Invoices() {
       y += 7;
       doc.text("No.Rek : 3141599311", margin, y);
 
-      // ================= WATERMARK =================
       if (invoice.status === "Paid") {
         doc.setTextColor(0, 150, 0);
         doc.setFontSize(50);
