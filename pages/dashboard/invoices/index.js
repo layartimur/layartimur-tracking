@@ -310,14 +310,14 @@ export default function Invoices() {
         doc.setTextColor(0, 0, 0);
       }
 
-      // 🔥 NAMA FILE MENGIKUTI NOMOR SJ
-      const sjClean = (shipment.sj_number || "SJ")
-        .replace(/\//g, "")
-        .replace(/\s/g, "");
+      // 🔥 FORMAT NAMA FILE PROFESIONAL
+const sjClean = (shipment.sj_number || "SJ")
+  .replace(/\//g, "")
+  .replace(/\s/g, "");
 
-      const fileName = `INVOICE${sjClean}.pdf`;
+const fileName = `INVOICE-${sjClean}.pdf`;
 
-      doc.save(fileName);
+doc.save(fileName);
 
     } catch (err) {
       console.error("INVOICE PDF ERROR:", err);
