@@ -145,7 +145,6 @@ export default function Invoices() {
         doc.addImage(logoBase64, "PNG", margin, 15, 30, 30);
       } catch {}
 
-      // HEADER
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
       doc.text("LAYAR TIMUR", 50, 20);
@@ -185,7 +184,6 @@ export default function Invoices() {
 
       doc.line(margin, 55, pageWidth - margin, 55);
 
-      // CUSTOMER
       doc.setFont("helvetica", "bold");
       doc.text("Ditagihkan Kepada:", margin, 65);
 
@@ -194,7 +192,6 @@ export default function Invoices() {
       doc.text(`Alamat : ${shipment.address || "-"}`, margin, 78);
       doc.text(`Telp : ${shipment.phone || "-"}`, margin, 84);
 
-      // TABLE
       let y = 95;
       let grandTotal = 0;
       let insuranceTotal = 0;
@@ -254,8 +251,8 @@ export default function Invoices() {
         { align: "right" }
       );
 
-      // TTD
       y += 20;
+
       const rightAreaX = pageWidth - margin - 60;
       let signY = y;
 
@@ -290,8 +287,8 @@ export default function Invoices() {
 
       doc.text("Albertus Penti", rightAreaX, signY + 40);
 
-      // PAYMENT
       y += 60;
+
       doc.setFont("helvetica", "bold");
       doc.text("Pembayaran ditujukan kepada:", margin, y);
 
@@ -313,7 +310,15 @@ export default function Invoices() {
         doc.setTextColor(0, 0, 0);
       }
 
-      doc.save(`${safeInvoiceNumber}.pdf`);
+      // 🔥 NAMA FILE MENGIKUTI NOMOR SJ
+      const sjClean = (shipment.sj_number || "SJ")
+        .replace(/\//g, "")
+        .replace(/\s/g, "");
+
+      const fileName = `INVOICE${sjClean}.pdf`;
+
+      doc.save(fileName);
+
     } catch (err) {
       console.error("INVOICE PDF ERROR:", err);
       alert("Terjadi kesalahan saat membuat invoice");
