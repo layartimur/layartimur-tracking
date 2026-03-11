@@ -10,12 +10,14 @@ import {
   Legend
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
-import * as XLSX from "xlsx"; // ✅ TAMBAHAN EXPORT EXCEL
+import * as XLSX from "xlsx";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 export default function Dashboard() {
+
   const router = useRouter();
+
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState(null);
 
@@ -25,32 +27,61 @@ export default function Dashboard() {
     profit: 0
   });
 
+  // DETAIL EXPENSE
+  const [expenseDetail,setExpenseDetail] = useState({
+    shipment:0,
+    gaji:0,
+    lain:0
+  });
+
   const [monthlyChart, setMonthlyChart] = useState(null);
+
+  // ✅ TAMBAHAN CHART KATEGORI
+  const [expenseCategoryChart,setExpenseCategoryChart] = useState(null);
 
   useEffect(() => {
     checkSession();
   }, []);
 
   const checkSession = async () => {
+
     const { data } = await supabase.auth.getSession();
 
     if (!data.session) {
+
       router.push("/login");
+
     } else {
+
       setUserEmail(data.session.user.email);
       loadFinanceData();
       setLoading(false);
+
     }
+
   };
 
   const loadFinanceData = async () => {
+
+    // ===========================
+    // LOAD INVOICES
+    // ===========================
+
     const { data: invoices } = await supabase
       .from("invoices")
       .select("total,status,created_at");
 
+    // ===========================
+    // LOAD EXPENSES
+    // ===========================
+
     const { data: expenses } = await supabase
       .from("expenses")
-      .select("amount,created_at");
+      .select("amount,category,shipment_id,created_at");
+
+    // ===========================
+    // HITUNG REVENUE
+    // ===========================
 
     const paidInvoices =
       invoices?.filter(i => i.status === "Paid") || [];
@@ -58,31 +89,80 @@ export default function Dashboard() {
     const revenue =
       paidInvoices.reduce((a, b) => a + Number(b.total), 0) || 0;
 
-    const totalExpenses =
-      expenses?.reduce((a, b) => a + Number(b.amount), 0) || 0;
+// ===========================
+// HITUNG EXPENSE PER JENIS
+// ===========================
 
-    const profit = revenue - totalExpenses;
+// BIAYA SHIPMENT
+const shipmentExpenses =
+expenses
+?.filter(e => e.shipment_id !== null)
+.reduce((a,b)=>a + Number(b.amount),0) || 0;
 
-    setSummary({ revenue, expenses: totalExpenses, profit });
+// GAJI
+const gajiExpenses =
+expenses
+?.filter(e => e.category?.toLowerCase().includes("gaji"))
+.reduce((a,b)=>a + Number(b.amount),0) || 0;
+
+// LAIN-LAIN (operasional selain gaji)
+const otherExpenses =
+expenses
+?.filter(e =>
+e.shipment_id === null &&
+!e.category?.toLowerCase().includes("gaji")
+)
+.reduce((a,b)=>a + Number(b.amount),0) || 0;
+
+const totalExpenses =
+shipmentExpenses +
+gajiExpenses +
+otherExpenses;
+
+const profit = revenue - totalExpenses;
+
+setSummary({
+revenue,
+expenses: totalExpenses,
+profit
+});
+
+setExpenseDetail({
+shipment: shipmentExpenses,
+gaji: gajiExpenses,
+lain: otherExpenses
+});
 
     // ===========================
     // PROFIT PER BULAN
     // ===========================
+
     const monthlyData = {};
 
     paidInvoices.forEach(inv => {
+
       const month = inv.created_at.slice(0, 7);
-      if (!monthlyData[month]) monthlyData[month] = { revenue: 0, expenses: 0 };
+
+      if (!monthlyData[month])
+        monthlyData[month] = { revenue: 0, expenses: 0 };
+
       monthlyData[month].revenue += Number(inv.total);
+
     });
 
     expenses?.forEach(exp => {
+
       const month = exp.created_at.slice(0, 7);
-      if (!monthlyData[month]) monthlyData[month] = { revenue: 0, expenses: 0 };
+
+      if (!monthlyData[month])
+        monthlyData[month] = { revenue: 0, expenses: 0 };
+
       monthlyData[month].expenses += Number(exp.amount);
+
     });
 
     const labels = Object.keys(monthlyData).sort();
+
     const profitValues = labels.map(
       m => monthlyData[m].revenue - monthlyData[m].expenses
     );
@@ -96,12 +176,47 @@ export default function Dashboard() {
         }
       ]
     });
+
+    // ===========================
+    // CHART PENGELUARAN PER KATEGORI
+    // ===========================
+
+    const categoryData = {};
+
+    expenses?.forEach(exp => {
+
+      const kategori = exp.kategori || "Tidak ada kategori";
+
+      if(!categoryData[kategori]){
+        categoryData[kategori] = 0;
+      }
+
+      categoryData[kategori] += Number(exp.amount);
+
+    });
+
+    const categoryLabels = Object.keys(categoryData);
+
+    const categoryValues = Object.values(categoryData);
+
+    setExpenseCategoryChart({
+      labels: categoryLabels,
+      datasets:[
+        {
+          label:"Pengeluaran per Kategori",
+          data: categoryValues
+        }
+      ]
+    });
+
   };
 
   // ===========================
-  // 🔥 EXPORT EXCEL ENTERPRISE
+  // EXPORT EXCEL
   // ===========================
+
   const exportExcel = async () => {
+
     const { data: invoices } = await supabase
       .from("invoices")
       .select("invoice_number,total,status,created_at")
@@ -128,15 +243,23 @@ export default function Dashboard() {
     const monthlyData = {};
 
     invoices?.forEach(inv => {
+
       const month = inv.created_at.slice(0, 7);
+
       if (!monthlyData[month]) monthlyData[month] = 0;
+
       monthlyData[month] += Number(inv.total);
+
     });
 
     expenses?.forEach(exp => {
+
       const month = exp.created_at.slice(0, 7);
+
       if (!monthlyData[month]) monthlyData[month] = 0;
+
       monthlyData[month] -= Number(exp.amount);
+
     });
 
     const monthlySheet = Object.keys(monthlyData).map(month => ({
@@ -171,38 +294,56 @@ export default function Dashboard() {
     );
 
     XLSX.writeFile(workbook, "Laporan_Keuangan_Layar_Timur.xlsx");
+
   };
 
-  if (loading) return <div style={{ padding: 40 }}>Loading...</div>;
+  if (loading)
+    return <div style={{ padding: 40 }}>Loading...</div>;
 
   return (
+
     <div style={{ padding: 40 }}>
+
       <h1 style={{ marginBottom: 10 }}>🚛 Enterprise Dashboard</h1>
+
       <p><strong>Login:</strong> {userEmail}</p>
 
       <div className="navButtons">
+
         <button onClick={() => router.push("/dashboard/shipments")}>
           📦 Shipments
         </button>
+
         <button onClick={() => router.push("/dashboard/invoices")}>
           🧾 Invoices
         </button>
+
+        <button onClick={() => router.push("/dashboard/expenses/create")}>
+          💸 Input Pengeluaran
+        </button>
+
       </div>
-<button onClick={() => router.push("/dashboard/expenses/create")}>
-  💸 Input Pengeluaran
-</button>
 
       <div className="cardContainer">
+
         <Card title="Revenue" value={summary.revenue} />
-        <Card title="Expenses" value={summary.expenses} />
+        <Card title="Shipment Expense" value={expenseDetail.shipment} />
+        <Card title="Gaji" value={expenseDetail.gaji} />
+        <Card title="Lain-lain" value={expenseDetail.lain} />
+        <Card title="Total Expenses" value={summary.expenses} />
         <Card title="Profit" value={summary.profit} highlight />
+
       </div>
 
       <div className="chartContainer">
         {monthlyChart && <Bar data={monthlyChart} />}
       </div>
 
-      {/* ✅ TOMBOL EXPORT EXCEL */}
+      {/* CHART PENGELUARAN KATEGORI */}
+      <div className="chartContainer">
+        {expenseCategoryChart && <Bar data={expenseCategoryChart} />}
+      </div>
+
       <button
         onClick={exportExcel}
         style={{
@@ -229,65 +370,78 @@ export default function Dashboard() {
       </button>
 
       <style jsx>{`
-        .navButtons {
-          margin-top: 20px;
-          display: flex;
-          gap: 15px;
-          flex-wrap: wrap;
+
+        .navButtons{
+          margin-top:20px;
+          display:flex;
+          gap:15px;
+          flex-wrap:wrap;
         }
 
-        button {
-          padding: 10px 15px;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          background: #0f172a;
-          color: white;
+        button{
+          padding:10px 15px;
+          border:none;
+          border-radius:6px;
+          cursor:pointer;
+          background:#0f172a;
+          color:white;
         }
 
-        .cardContainer {
-          display: flex;
-          gap: 20px;
-          margin-top: 30px;
-          flex-wrap: wrap;
+        .cardContainer{
+          display:flex;
+          gap:20px;
+          margin-top:30px;
+          flex-wrap:wrap;
         }
 
-        .chartContainer {
-          margin-top: 40px;
-          background: #fff;
-          padding: 20px;
-          border-radius: 10px;
-          box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        .chartContainer{
+          margin-top:40px;
+          background:#fff;
+          padding:20px;
+          border-radius:10px;
+          box-shadow:0 5px 15px rgba(0,0,0,0.08);
         }
 
-        .logoutBtn {
-          margin-top: 40px;
-          background: #dc2626;
+        .logoutBtn{
+          margin-top:40px;
+          background:#dc2626;
         }
 
-        @media (max-width: 768px) {
-          .cardContainer {
-            flex-direction: column;
+        @media (max-width:768px){
+
+          .cardContainer{
+            flex-direction:column;
           }
+
         }
+
       `}</style>
+
     </div>
+
   );
+
 }
 
 function Card({ title, value, highlight }) {
+
   return (
+
     <div
       style={{
-        flex: 1,
-        padding: 20,
-        borderRadius: 10,
+        flex:1,
+        padding:20,
+        borderRadius:10,
         background: highlight ? "#16a34a" : "#0f172a",
-        color: "white"
+        color:"white"
       }}
     >
+
       <h3>{title}</h3>
       <h2>Rp {value.toLocaleString()}</h2>
+
     </div>
+
   );
+
 }
