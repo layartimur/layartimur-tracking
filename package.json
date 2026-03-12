@@ -12,6 +12,7 @@
     "chart.js": "^4.5.1",
     "jspdf": "^4.2.0",
     "next": "latest",
+    "nodemailer": "^8.0.2",
     "qrcode": "^1.5.4",
     "react": "latest",
     "react-chartjs-2": "^5.3.1",

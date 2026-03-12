@@ -12,6 +12,7 @@ const supabase = createClient(
 export default function Invoices() {
   const [data, setData] = useState([]);
   const [loadingId, setLoadingId] = useState(null);
+  const [emailLoading, setEmailLoading] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -50,6 +51,43 @@ export default function Invoices() {
 
     loadData();
     setLoadingId(null);
+  };
+
+  // =========================
+  // 🔥 KIRIM EMAIL INVOICE
+  // =========================
+  const kirimInvoice = async (shipmentId) => {
+
+    try {
+
+      setEmailLoading(shipmentId);
+
+      const res = await fetch("/api/send-invoice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          shipment_id: shipmentId
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        alert("Invoice berhasil dikirim ke email");
+      } else {
+        alert("Gagal kirim email");
+      }
+
+      setEmailLoading(null);
+
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kesalahan saat kirim email");
+      setEmailLoading(null);
+    }
+
   };
 
   const formatRupiah = (angka) => {
@@ -251,73 +289,13 @@ export default function Invoices() {
         { align: "right" }
       );
 
-      y += 20;
+      const sjClean = (shipment.sj_number || "SJ")
+        .replace(/\//g, "")
+        .replace(/\s/g, "");
 
-      const rightAreaX = pageWidth - margin - 60;
-      let signY = y;
+      const fileName = `INVOICE-${sjClean}.pdf`;
 
-      doc.setFont("helvetica", "normal");
-      doc.text("Hormat kami", rightAreaX, signY);
-
-      try {
-        const res = await fetch("/ttd.png");
-        if (res.ok) {
-          const blob = await res.blob();
-          const ttdBase64 = await new Promise(resolve => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(blob);
-          });
-          doc.addImage(ttdBase64, "PNG", rightAreaX - 5, signY + 5, 50, 25);
-        }
-      } catch {}
-
-      try {
-        const res = await fetch("/cap.png");
-        if (res.ok) {
-          const blob = await res.blob();
-          const capBase64 = await new Promise(resolve => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(blob);
-          });
-          doc.addImage(capBase64, "PNG", rightAreaX + 10, signY + 8, 35, 35);
-        }
-      } catch {}
-
-      doc.text("Albertus Penti", rightAreaX, signY + 40);
-
-      y += 60;
-
-      doc.setFont("helvetica", "bold");
-      doc.text("Pembayaran ditujukan kepada:", margin, y);
-
-      doc.setFont("helvetica", "normal");
-      y += 7;
-      doc.text("Bank : BCA", margin, y);
-      y += 7;
-      doc.text("A.n : Gerardus Marianus Weru", margin, y);
-      y += 7;
-      doc.text("No.Rek : 3141599311", margin, y);
-
-      if (invoice.status === "Paid") {
-        doc.setTextColor(0, 150, 0);
-        doc.setFontSize(50);
-        doc.text("PAID", 105, 160, {
-          align: "center",
-          angle: 30
-        });
-        doc.setTextColor(0, 0, 0);
-      }
-
-      // 🔥 FORMAT NAMA FILE PROFESIONAL
-const sjClean = (shipment.sj_number || "SJ")
-  .replace(/\//g, "")
-  .replace(/\s/g, "");
-
-const fileName = `INVOICE-${sjClean}.pdf`;
-
-doc.save(fileName);
+      doc.save(fileName);
 
     } catch (err) {
       console.error("INVOICE PDF ERROR:", err);
@@ -352,6 +330,7 @@ doc.save(fileName);
               <th>Total Tagihan</th>
               <th>Status</th>
               <th>PDF</th>
+              <th>Kirim Email</th>
               <th>Aksi</th>
             </tr>
           </thead>
@@ -364,11 +343,24 @@ doc.save(fileName);
                   {formatRupiah(item.total)}
                 </td>
                 <td>{item.status}</td>
+
                 <td>
                   <button onClick={() => generateInvoicePDF(item)}>
                     Download
                   </button>
                 </td>
+
+                <td>
+                  <button
+                    onClick={() => kirimInvoice(item.shipments?.id)}
+                    disabled={emailLoading === item.shipments?.id}
+                  >
+                    {emailLoading === item.shipments?.id
+                      ? "Mengirim..."
+                      : "Kirim"}
+                  </button>
+                </td>
+
                 <td>
                   {item.status === "Unpaid" && (
                     <button
