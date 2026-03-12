@@ -8,8 +8,12 @@ const supabase = createClient(
 );
 
 export default function CreateShipment() {
+
   const router = useRouter();
+
   const [vehicles, setVehicles] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [customerType,setCustomerType] = useState("langganan");
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -21,7 +25,6 @@ export default function CreateShipment() {
     weight: ""
   });
 
-  // ✅ TAMBAHAN keterangan
   const [items, setItems] = useState([
     { 
       name: "", 
@@ -30,30 +33,77 @@ export default function CreateShipment() {
       price: 0, 
       nominal: 0, 
       insurance: false,
-      keterangan: "" // ✅ BARU
+      keterangan: ""
     }
   ]);
 
   useEffect(() => {
     loadVehicles();
+    loadCustomers();
   }, []);
 
   const loadVehicles = async () => {
-    const { data } = await supabase.from("vehicles").select("*");
+    const { data } = await supabase
+      .from("vehicles")
+      .select("*");
+
     setVehicles(data || []);
   };
 
+  const loadCustomers = async () => {
+
+    const { data } = await supabase
+      .from("customers")
+      .select("nama_pt, phone, address")
+      .order("nama_pt");
+
+    setCustomers(data || []);
+
+  };
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
+
+  };
+
+  const handleCustomerSelect = (e) => {
+
+    const selected = e.target.value;
+
+    const customer = customers.find(c => c.nama_pt === selected);
+
+    if(customer){
+      setForm({
+        ...form,
+        customer_name: customer.nama_pt,
+        phone: customer.phone || "",
+        address: customer.address || ""
+      });
+    }else{
+      setForm({
+        ...form,
+        customer_name: selected
+      });
+    }
+
   };
 
   const handleItemChange = (index, field, value) => {
+
     const updated = [...items];
+
     updated[index][field] = value;
+
     setItems(updated);
+
   };
 
   const addItem = () => {
+
     setItems([
       ...items,
       { 
@@ -63,23 +113,32 @@ export default function CreateShipment() {
         price: 0, 
         nominal: 0, 
         insurance: false,
-        keterangan: "" // ✅ BARU
+        keterangan: ""
       }
     ]);
+
   };
 
   const removeItem = (index) => {
+
     const updated = [...items];
+
     updated.splice(index, 1);
+
     setItems(updated);
+
   };
 
   const calculateTotal = () => {
+
     const berat = Number(form.weight) || 0;
+
     let total = 0;
 
     items.forEach(item => {
+
       const hargaPerKg = Number(item.price) || 0;
+
       const subtotal = berat * hargaPerKg;
 
       const ins = item.insurance
@@ -87,12 +146,15 @@ export default function CreateShipment() {
         : 0;
 
       total += subtotal + ins;
+
     });
 
     return total;
+
   };
 
   const handleSubmit = async () => {
+
     if (!form.tracking_number || !form.customer_name) {
       alert("Tracking & Customer wajib diisi");
       return;
@@ -125,9 +187,6 @@ export default function CreateShipment() {
       return;
     }
 
-    // ==========================
-    // INSERT ITEMS (UPGRADE)
-    // ==========================
     const itemsToInsert = items.map(item => ({
       shipment_id: shipment.id,
       name: item.name || "-",
@@ -136,7 +195,7 @@ export default function CreateShipment() {
       price: Number(item.price) || 0,
       item_value: Number(item.nominal) || 0,
       insurance: item.insurance || false,
-      keterangan: item.keterangan || "" // ✅ BARU
+      keterangan: item.keterangan || ""
     }));
 
     const { error: itemError } = await supabase
@@ -157,18 +216,76 @@ export default function CreateShipment() {
     }]);
 
     alert("Shipment & Invoice berhasil dibuat 🚀");
+
     router.push("/dashboard/shipments");
+
   };
 
   return (
+
     <div className="adminWrapper">
+
       <div className="adminContainer">
+
         <h1>Create Shipment</h1>
 
-        <input name="tracking_number" placeholder="Tracking" onChange={handleChange} />
-        <input name="customer_name" placeholder="Customer" onChange={handleChange} />
-        <input name="phone" placeholder="Phone" onChange={handleChange} />
-        <input name="address" placeholder="Alamat" onChange={handleChange} />
+        <input
+          name="tracking_number"
+          placeholder="Tracking"
+          onChange={handleChange}
+        />
+
+        <select
+          value={customerType}
+          onChange={(e)=>setCustomerType(e.target.value)}
+        >
+
+          <option value="langganan">Customer Langganan</option>
+          <option value="umum">Customer Umum</option>
+
+        </select>
+
+        {customerType === "langganan" ? (
+
+          <select
+            name="customer_name"
+            value={form.customer_name}
+            onChange={handleCustomerSelect}
+          >
+
+            <option value="">Pilih PT</option>
+
+            {customers.map((c,i)=>(
+              <option key={i} value={c.nama_pt}>
+                {c.nama_pt}
+              </option>
+            ))}
+
+          </select>
+
+        ) : (
+
+          <input
+            name="customer_name"
+            placeholder="Nama Customer"
+            onChange={handleChange}
+          />
+
+        )}
+
+        <input
+          name="phone"
+          placeholder="Phone"
+          value={form.phone}
+          onChange={handleChange}
+        />
+
+        <input
+          name="address"
+          placeholder="Alamat"
+          value={form.address}
+          onChange={handleChange}
+        />
 
         <input
           name="weight"
@@ -177,19 +294,27 @@ export default function CreateShipment() {
           onChange={handleChange}
         />
 
-        <select name="vehicle_id" onChange={handleChange}>
+        <select
+          name="vehicle_id"
+          onChange={handleChange}
+        >
+
           <option value="">Pilih Kendaraan</option>
+
           {vehicles.map(v => (
             <option key={v.id} value={v.id}>
               {v.name} - {v.plate_number}
             </option>
           ))}
+
         </select>
 
         <h3>Items</h3>
 
         {items.map((item,index)=>(
+
           <div key={index}>
+
             <input
               placeholder="Nama Barang"
               onChange={(e)=>handleItemChange(index,"name",e.target.value)}
@@ -206,7 +331,6 @@ export default function CreateShipment() {
               onChange={(e)=>handleItemChange(index,"unit",e.target.value)}
             />
 
-            {/* ✅ INPUT BARU */}
             <input
               placeholder="Keterangan (contoh: 11 koli / 2 dos)"
               onChange={(e)=>handleItemChange(index,"keterangan",e.target.value)}
@@ -225,25 +349,43 @@ export default function CreateShipment() {
             />
 
             <label>
+
               <input
                 type="checkbox"
                 onChange={(e)=>handleItemChange(index,"insurance",e.target.checked)}
               />
+
               Asuransi 0.2%
+
             </label>
 
-            <button onClick={()=>removeItem(index)}>Hapus</button>
+            <button onClick={()=>removeItem(index)}>
+              Hapus
+            </button>
+
           </div>
+
         ))}
 
-        <button onClick={addItem}>+ Tambah Item</button>
+        <button onClick={addItem}>
+          + Tambah Item
+        </button>
 
         <h3>Total: Rp {calculateTotal().toLocaleString()}</h3>
 
-        <button onClick={handleSubmit} disabled={loading}>
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+        >
+
           {loading ? "Menyimpan..." : "Simpan Shipment"}
+
         </button>
+
       </div>
+
     </div>
+
   );
+
 }
