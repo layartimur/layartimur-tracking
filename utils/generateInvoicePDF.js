@@ -138,23 +138,33 @@ y += 10;
 
 doc.setFont("helvetica","normal");
 
+/* TOTAL VARIABLE */
+
 let subtotalTotal = 0;
 let insuranceTotal = 0;
 let grandTotal = 0;
 
 (items || []).forEach(item => {
 
-const berat = Number(item.qty || 0);
+const berat = Number(shipment.weight || 0);
 const harga = Number(item.price || 0);
 
+/* subtotal */
+
 const subtotal = berat * harga;
+
+/* asuransi */
 
 const nominal = Number(item.item_value || 0);
 const ins = item.insurance ? nominal * 0.002 : 0;
 
+/* akumulasi total */
+
 subtotalTotal += subtotal;
 insuranceTotal += ins;
 grandTotal += subtotal + ins;
+
+/* render table */
 
 doc.rect(margin,y,pageWidth-margin*2,10);
 
