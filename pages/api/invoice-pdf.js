@@ -8,6 +8,8 @@ process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 export default async function handler(req,res){
 
+try{
+
 const { shipment } = req.query;
 
 if(!shipment){
@@ -37,13 +39,13 @@ if(itemError){
 console.log(itemError);
 }
 
-/* format sama seperti email */
+/* format invoice */
 
 const invoice = {
 shipments: shipmentData
 };
 
-/* generate pdf dengan template yang sama */
+/* generate pdf */
 
 const pdfBuffer = await generateInvoicePDF(invoice,items);
 
@@ -53,9 +55,17 @@ res.setHeader("Content-Type","application/pdf");
 
 res.setHeader(
 "Content-Disposition",
-`inline; filename=INVOICE-${shipmentData.sj_number}.pdf`
+`attachment; filename=INVOICE-${shipmentData.sj_number}.pdf`
 );
 
-res.send(Buffer.from(pdfBuffer));
+res.send(pdfBuffer);
+
+}catch(err){
+
+console.log(err);
+
+res.status(500).send("Gagal membuat PDF");
+
+}
 
 }

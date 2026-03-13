@@ -345,11 +345,15 @@ export default function Invoices() {
                 <td>{item.status}</td>
 
                 <td>
-                  <button onClick={() => generateInvoicePDF(item)}>
-                    Download
-                  </button>
-                </td>
-
+<a
+href={`/api/invoice-pdf?shipment=${item.shipments?.id}`}
+target="_blank"
+>
+<button>
+Download
+</button>
+</a>
+</td>
                 <td>
                   <button
                     onClick={() => kirimInvoice(item.shipments?.id)}

@@ -27,10 +27,18 @@ return "";
 
 function loadImage(file){
 
+try{
+
 const filePath = path.join(process.cwd(),"public",file);
 const base64 = fs.readFileSync(filePath).toString("base64");
 
 return `data:image/png;base64,${base64}`;
+
+}catch{
+
+return null;
+
+}
 
 }
 
@@ -47,12 +55,11 @@ const pageWidth = 210;
 
 /* ================= LOGO ================= */
 
-try{
-
 const logo = loadImage("logosj.png");
-doc.addImage(logo,"PNG",margin,15,30,30);
 
-}catch{}
+if(logo){
+doc.addImage(logo,"PNG",margin,15,30,30);
+}
 
 /* ================= HEADER ================= */
 
@@ -90,19 +97,13 @@ const invoiceNumber = shipment.sj_number
 ? `INVOICE-${shipment.sj_number.replace(/\//g,"")}`
 : "-";
 
-/* posisi kanan invoice */
-
 const labelX = pageWidth - margin - 55;
 const colonX = labelX + 20;
 const valueX = colonX + 4;
 
-/* baris 1 */
-
 doc.text("Tgl Invoice",labelX,30);
 doc.text(":",colonX,30);
 doc.text(tanggalInvoice,valueX,30);
-
-/* baris 2 */
 
 doc.text("No. Invoice",labelX,38);
 doc.text(":",colonX,38);
@@ -191,7 +192,6 @@ totalY += 7;
 doc.text("TOTAL TAGIHAN",pageWidth-margin-60,totalY);
 doc.text(`Rp ${grandTotal.toLocaleString()}`,pageWidth-margin,totalY,{align:"right"});
 
-
 /* ================= TERBILANG ================= */
 
 let terbilangY = y + 8;
@@ -199,13 +199,11 @@ let terbilangY = y + 8;
 doc.setFont("helvetica","italic");
 doc.text("Terbilang:",margin,terbilangY);
 
-const totalText = terbilang(grandTotal).trim() + " rupiah";
+const totalText = (terbilang(grandTotal) + " rupiah").trim();
 
-/* pecah teks sesuai lebar */
+const lines = doc.splitTextToSize(totalText,120);
 
-const terbilangLines = doc.splitTextToSize(totalText,120);
-
-doc.text(terbilangLines,margin,terbilangY+7);
+doc.text(lines,margin,terbilangY+7);
 
 /* ================= PEMBAYARAN ================= */
 
@@ -228,28 +226,26 @@ doc.text(": 3141599311",margin+30,paymentY+21);
 /* ================= SIGNATURE ================= */
 
 const signX = pageWidth - margin - 50;
-const signY = totalY + 20;
+const signY = paymentY + 10;
 
 doc.text("Hormat kami,",signX,signY);
 
-try{
-
 const ttd = loadImage("ttd.png");
+
+if(ttd){
 doc.addImage(ttd,"PNG",signX,signY+5,40,20);
-
-}catch{}
-
-try{
+}
 
 const cap = loadImage("cap.png");
-doc.addImage(cap,"PNG",signX+10,signY+5,30,30);
 
-}catch{}
+if(cap){
+doc.addImage(cap,"PNG",signX+10,signY+5,30,30);
+}
 
 doc.text("Albertus Penti",signX,signY+35);
 
 /* ================= RETURN ================= */
 
-return doc.output("arraybuffer");
+return Buffer.from(doc.output("arraybuffer"));
 
 }
