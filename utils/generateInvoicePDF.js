@@ -45,7 +45,7 @@ return null;
 /* ================= MAIN ================= */
 
 export async function generateInvoicePDF(invoice,items){
-
+console.log("STATUS INVOICE:", invoice.status);
 const shipment = invoice.shipments || {};
 
 const doc = new jsPDF("p","mm","a4");
@@ -253,6 +253,28 @@ doc.addImage(cap,"PNG",signX+10,signY+5,30,30);
 }
 
 doc.text("Albertus Penti",signX,signY+35);
+
+/* ================= WATERMARK PAID ================= */
+
+if((invoice.status || "").toLowerCase() === "paid"){
+
+doc.setFont("helvetica","bold");
+doc.setFontSize(80);
+doc.setTextColor(0,150,0);
+
+doc.text(
+"PAID",
+105,
+160,
+{
+align:"center",
+angle:45
+}
+);
+
+doc.setTextColor(0,0,0);
+
+}
 
 /* ================= RETURN ================= */
 

@@ -28,6 +28,14 @@ if(error || !shipmentData){
 return res.status(404).send("Shipment tidak ditemukan");
 }
 
+/* ================= ambil invoice ================= */
+
+const { data:invoiceData } = await supabase
+.from("invoices")
+.select("status")
+.eq("shipment_id", shipmentData.id)
+.single();
+
 /* ambil items */
 
 const { data:items, error:itemError } = await supabase
@@ -42,7 +50,8 @@ console.log(itemError);
 /* format invoice */
 
 const invoice = {
-shipments: shipmentData
+shipments: shipmentData,
+status: invoiceData?.status || "Unpaid"
 };
 
 /* generate pdf */
