@@ -228,10 +228,10 @@ doc.text("Bank",margin,paymentY+7);
 doc.text(": BCA",margin+30,paymentY+7);
 
 doc.text("A.n",margin,paymentY+14);
-doc.text(": Gerardus Marianus Weru",margin+30,paymentY+14);
+doc.text(": Maria Goreti Nango",margin+30,paymentY+14);
 
 doc.text("No.Rek",margin,paymentY+21);
-doc.text(": 3141599311",margin+30,paymentY+21);
+doc.text(": 3141742343",margin+30,paymentY+21);
 
 /* ================= SIGNATURE ================= */
 
