@@ -331,6 +331,17 @@ cursor:"pointer"
 📥 Export Excel Report
 </button>
 
+{/* LOGOUT BUTTON */}
+<button
+onClick={async ()=>{
+await supabase.auth.signOut();
+router.push("/login");
+}}
+className="logoutBtn"
+>
+Logout
+</button>
+
 <style jsx>{`
 
 .navButtons{
@@ -354,6 +365,16 @@ background:#fff;
 padding:20px;
 border-radius:10px;
 box-shadow:0 5px 15px rgba(0,0,0,0.08);
+}
+
+.logoutBtn{
+margin-top:20px;
+padding:10px 15px;
+background:#dc2626;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
 }
 
 `}</style>
