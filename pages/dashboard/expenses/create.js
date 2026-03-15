@@ -119,6 +119,9 @@ export default function CreateExpense() {
           <option value="kasbon">
             Kasbon
           </option>
+          <option value="transfer">
+           Transfer ke Mr. Tomsan
+           </option>
 
           <option value="lain">
             Lain-lain
@@ -210,6 +213,10 @@ export default function CreateExpense() {
           <option value="Operasional">
             Operasional
           </option>
+
+	  <option value="Transfer Mr. Tomsan">
+           Transfer ke Mr. Tomsan
+           </option>
 
           <option value="Lainnya">
             Lainnya
