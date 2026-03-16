@@ -198,43 +198,45 @@ borderRadius:8
 
 };
 
-const exportExcel = async()=>{
+const exportExcel = async () => {
 
-const {data:invoices} = await supabase
+const { data: invoices } = await supabase
 .from("invoices")
-.select("invoice_number,total,status,created_at")
+.select("total,status")
 .eq("status","Paid");
 
-const {data:expenses} = await supabase
+const { data: expenses } = await supabase
 .from("expenses")
-.select("description,amount,created_at");
+.select("category,description,amount")
+.order("category",{ascending:true});
 
-const revenue =
+const totalRevenue =
 invoices?.reduce((a,b)=>a+Number(b.total),0) || 0;
 
 const totalExpenses =
 expenses?.reduce((a,b)=>a+Number(b.amount),0) || 0;
 
-const profit = revenue-totalExpenses;
-
-const summarySheet=[
-{Keterangan:"Total Revenue",Nilai:revenue},
-{Keterangan:"Total Expenses",Nilai:totalExpenses},
-{Keterangan:"Laba Bersih",Nilai:profit}
+const summaryData = [
+{ Keterangan:"Total Revenue", Nilai: totalRevenue },
+{ Keterangan:"Total Expenses", Nilai: totalExpenses },
+{ Keterangan:"Laba Bersih", Nilai: totalRevenue - totalExpenses }
 ];
 
-const workbook = XLSX.utils.book_new();
+const detailExpenses = expenses.map(e => ({
+Category:e.category,
+Description:e.description,
+Amount:e.amount
+}));
 
-XLSX.utils.book_append_sheet(
-workbook,
-XLSX.utils.json_to_sheet(summarySheet),
-"Summary"
-);
+const wb = XLSX.utils.book_new();
 
-XLSX.writeFile(
-workbook,
-"Laporan_Keuangan_Layar_Timur.xlsx"
-);
+const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+const wsExpenses = XLSX.utils.json_to_sheet(detailExpenses);
+
+XLSX.utils.book_append_sheet(wb, wsSummary,"Summary");
+XLSX.utils.book_append_sheet(wb, wsExpenses,"Expenses Detail");
+
+XLSX.writeFile(wb,"Laporan_Keuangan_Layar_Timur.xlsx");
 
 };
 
