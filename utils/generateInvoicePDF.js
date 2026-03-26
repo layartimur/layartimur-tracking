@@ -254,27 +254,20 @@ doc.addImage(cap,"PNG",signX+10,signY+5,30,30);
 
 doc.text("Albertus Penti",signX,signY+35);
 
-/* ================= WATERMARK PAID ================= */
-
-if((invoice.status || "").toLowerCase() === "paid"){
-
-doc.setFont("helvetica","bold");
-doc.setFontSize(80);
-doc.setTextColor(0,150,0);
-
-doc.text(
-"PAID",
-105,
-160,
-{
-align:"center",
-angle:45
-}
-);
-
-doc.setTextColor(0,0,0);
-
-}
+  /* ================= WATERMARK PAID ================= */
+  // Pastikan warna MERAH (255, 0, 0) dan ukuran 40
+  const currentStatus = (invoice.status || "").toString().trim().toLowerCase();
+  
+  if (currentStatus === "paid") {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(40);
+    doc.setTextColor(255, 0, 0); // Merah
+    doc.text("PAID", 105, 160, { 
+      align: "center", 
+      angle: 45 
+    });
+    doc.setTextColor(0, 0, 0); // Reset ke hitam
+  }
 
 /* ================= RETURN ================= */
 

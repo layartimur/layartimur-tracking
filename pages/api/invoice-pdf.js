@@ -2,79 +2,43 @@ import { createClient } from "@supabase/supabase-js";
 import { generateInvoicePDF } from "../../utils/generateInvoicePDF";
 
 const supabase = createClient(
-process.env.NEXT_PUBLIC_SUPABASE_URL,
-process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-export default async function handler(req,res){
+export default async function handler(req, res) {
+  try {
+    const { shipment } = req.query;
+    if (!shipment) return res.status(400).send("Shipment ID required");
 
-try{
+    // 1. Ambil data Shipment
+    const { data: shipmentData } = await supabase.from("shipments").select("*").eq("id", shipment).single();
+    if (!shipmentData) return res.status(404).send("Shipment tidak ditemukan");
 
-const { shipment } = req.query;
+    // 2. Ambil SEMUA data invoice dan cari yang cocok (Paling Aman)
+    const { data: allInvoices } = await supabase.from("invoices").select("status, shipment_id");
+    const invoiceRecord = allInvoices?.find(inv => 
+      String(inv.shipment_id).trim() === String(shipmentData.id).trim()
+    );
 
-if(!shipment){
-return res.status(400).send("Shipment ID required");
-}
+    const cleanStatus = String(invoiceRecord?.status || "Unpaid").trim();
+    
+    // Log terminal untuk memastikan
+    console.log("--- DEBUG FINAL ---");
+    console.log("STATUS DITEMUKAN:", cleanStatus);
 
-/* ambil shipment */
+    const { data: items } = await supabase.from("shipment_items").select("*").eq("shipment_id", shipmentData.id);
 
-const { data:shipmentData, error } = await supabase
-.from("shipments")
-.select("*")
-.eq("id",shipment)
-.single();
+    const invoice = { ...shipmentData, shipments: shipmentData, status: cleanStatus };
+    const pdfBuffer = await generateInvoicePDF(invoice, items);
 
-if(error || !shipmentData){
-return res.status(404).send("Shipment tidak ditemukan");
-}
-
-/* ================= ambil invoice ================= */
-
-const { data:invoiceData } = await supabase
-.from("invoices")
-.select("status")
-.eq("shipment_id", shipmentData.id)
-.single();
-
-/* ambil items */
-
-const { data:items, error:itemError } = await supabase
-.from("shipment_items")
-.select("*")
-.eq("shipment_id",shipmentData.id);
-
-if(itemError){
-console.log(itemError);
-}
-
-/* format invoice */
-
-const invoice = {
-shipments: shipmentData,
-status: invoiceData?.status || "Unpaid"
-};
-
-/* generate pdf */
-
-const pdfBuffer = await generateInvoicePDF(invoice,items);
-
-/* kirim ke browser */
-
-res.setHeader("Content-Type","application/pdf");
-
-res.setHeader(
-"Content-Disposition",
-`attachment; filename=INVOICE-${shipmentData.sj_number}.pdf`
-);
-
-res.send(pdfBuffer);
-
-}catch(err){
-
-console.log(err);
-
-res.status(500).send("Gagal membuat PDF");
-
-}
-
+    // 3. Kirim ke Browser dengan nama file yang benar
+    const safeSj = (shipmentData.sj_number || "INVOICE").replace(/\//g, "-");
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=INVOICE-${safeSj}.pdf`);
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Gagal");
+  }
 }
