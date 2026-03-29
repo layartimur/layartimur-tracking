@@ -122,6 +122,7 @@ export default function CreateExpense() {
           <option value="transfer">
            Transfer ke Mr. Tomsan
            </option>
+          <option value="aset">Pembelian Aset</option> {/* 🔥 Opsi Baru */}
 
           <option value="lain">
             Lain-lain
@@ -200,6 +201,19 @@ export default function CreateExpense() {
           <option value="Gaji Admin Kupang">
             Gaji Admin Kupang
           </option>
+
+                 {/* ASET CATEGORIES */}
+          {expenseType === "aset" && (
+            <optgroup label="Detail Aset">
+              <option value="Pembelian Mobil">DP Mobil</option>
+              <option value="Pembelian Mobil">Angsuran Mobil</option>
+              <option value="Pembelian Motor">Pembelian Motor</option>
+              <option value="Pembelian Komputer">Pembelian Komputer</option>
+              <option value="Pembelian Printer">Pembelian Printer</option>
+              <option value="Aset Lainnya">Aset Lainnya</option>
+            </optgroup>
+          )}
+
 
           {/* OPERASIONAL */}
           <option value="Kasbon">
