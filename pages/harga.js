@@ -24,7 +24,7 @@ export default function Harga() {
               <tr><td>Surabaya - Kota Kupang</td><td>Rp 8.000 / Kg</td></tr>
               <tr><td>Surabaya - Kabupaten Kupang</td><td>Rp 10.000 / Kg</td></tr>
               <tr><td>Surabaya - Waingapu</td><td>Rp 6.000 / Kg</td></tr>
-              <tr><td>Surabaya - Tambolaka</td><td>Rp 10.000 / Kg</td></tr>
+              <tr><td>Surabaya - Tambolaka</td><td>Rp 15.000 / Kg</td></tr>
               <tr><td>Surabaya - Waikabubak</td><td>Rp 15.000 / Kg</td></tr>
               <tr><td>Surabaya - Kefa</td><td>Rp 15.000 / Kg</td></tr>
             </tbody>
