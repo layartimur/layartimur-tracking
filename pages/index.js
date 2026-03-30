@@ -65,6 +65,7 @@ export default function Home() {
           <Link href="/tentang" onClick={()=>setMenuOpen(false)}>Tentang</Link>
           <Link href="/harga" onClick={()=>setMenuOpen(false)}>Harga</Link>
           <Link href="/tracking" onClick={()=>setMenuOpen(false)}>Tracking</Link>
+          <Link href="/testimoni" onClick={()=>setMenuOpen(false)}>Testimoni</Link>
           <a href="#kontak" onClick={()=>setMenuOpen(false)}>Kontak</a>
         </div>
 
