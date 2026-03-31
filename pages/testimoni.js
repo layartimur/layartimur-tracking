@@ -34,24 +34,19 @@ export default function LandingPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-4xl sm:text-5xl md:text-6xl font-black leading-tight"
         >
-          Titp Barang ke NTT <br />
+          Titip Barang ke NTT <br />
           <span className="text-blue-400">Lebih Cepat & Aman</span>
         </motion.h1>
 
         <p className="mt-6 text-white/70 max-w-xl text-sm sm:text-base md:text-lg">
           Jastip terpercaya dengan tracking real-time dan pengiriman aman ke seluruh NTT.
         </p>
-
-        <div className="mt-8 flex flex-col sm:flex-row gap-4">
-          
-    
-        </div>
       </section>
 
       {/* FEATURES */}
       <section className="py-16 px-4 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {["Cepat, Aman & Tracking Real-time"].map((item, i) => (
+          {["Cepat", "Aman", "Tracking Real-time"].map((item, i) => (
             <div key={i} className="bg-white/5 p-6 rounded-xl text-center">
               <h3 className="text-lg md:text-xl font-bold">{item}</h3>
               <p className="text-white/60 text-sm mt-2">
@@ -70,33 +65,40 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {reviews.map((item, i) => (
-            <div key={i} className="bg-white text-black p-6 rounded-2xl shadow-lg hover:scale-105 transition">
+            <div key={i} className="bg-white text-black p-6 rounded-2xl shadow-lg hover:shadow-xl transition">
 
-              {/* FOTO */}
-              <div className="flex justify-center mb-4">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+
+                {/* FOTO */}
                 <img
                   src={item.img}
                   alt={item.name}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-blue-400 shadow-md"
+                  className="w-16 h-16 rounded-full object-cover border-2 border-blue-400 shadow-md flex-shrink-0"
                 />
-              </div>
 
-              {/* ⭐ BINTANG */}
-              <div className="flex justify-center mb-2 text-yellow-400 text-lg md:text-xl">
-                {[...Array(5)].map((_, index) => (
-                  <span key={index}>★</span>
-                ))}
-              </div>
+                {/* TEXT CONTENT */}
+                <div className="flex-1 text-center sm:text-left">
 
-              {/* TEXT */}
-              <p className="italic text-sm text-center mb-4">
-                "{item.text}"
-              </p>
+                  {/* ⭐ BINTANG */}
+                  <div className="flex justify-center sm:justify-start text-yellow-400 text-sm md:text-base">
+                    {[...Array(5)].map((_, index) => (
+                      <span key={index}>★</span>
+                    ))}
+                  </div>
 
-              {/* NAME */}
-              <div className="text-center">
-                <h4 className="font-bold">{item.name}</h4>
-                <p className="text-xs text-gray-500">{item.role}</p>
+                  {/* TEXT */}
+                  <p className="italic text-sm mt-1">
+                    "{item.text}"
+                  </p>
+
+                  {/* NAME */}
+                  <div className="mt-2">
+                    <h4 className="font-bold text-sm">{item.name}</h4>
+                    <p className="text-xs text-gray-500">{item.role}</p>
+                  </div>
+
+                </div>
+
               </div>
 
             </div>
@@ -110,7 +112,7 @@ export default function LandingPage() {
           Siap Kirim Barang?
         </h2>
         <button className="bg-blue-500 px-10 py-5 rounded-xl font-bold hover:bg-blue-600 transition">
-          Mulai Sekarang
+          Chat Kami Sekarang
         </button>
       </section>
 
