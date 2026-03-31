@@ -8,19 +8,19 @@ export default function LandingPage() {
       name: "Anita Wahyuni",
       role: "Ibu Rumah Tangga",
       text: "Pengiriman barang dari Surabaya ke Kota Kupang selalu tepat waktu dan aman.",
-      img: "/anita.png"
+      
     },
     {
       name: "Edo",
       role: "Karyawan Swasta",
       text: "Update real-time sangat akurat, jadi lebih tenang kirim barang.",
-      img: "/edo.png"
+      
     },
     {
       name: "Martha",
       role: "Online Shop",
       text: "Barang aman sampai pelanggan, sangat membantu bisnis saya.",
-      img: "/martha.png"
+      
     }
   ];
 
@@ -69,13 +69,7 @@ export default function LandingPage() {
 
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
 
-                {/* FOTO */}
-                <img
-                  src={item.img}
-                  alt={item.name}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-blue-400 shadow-md flex-shrink-0"
-                />
-
+              
                 {/* TEXT CONTENT */}
                 <div className="flex-1 text-center sm:text-left">
 
