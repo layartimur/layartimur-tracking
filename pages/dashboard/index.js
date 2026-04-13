@@ -24,16 +24,23 @@ export default function Dashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState(null);
+
+  // ✅ FILTER STATE
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   const [summary, setSummary] = useState({
     revenue: 0,
     expenses: 0,
     profit: 0
   });
+
   const [expenseDetail, setExpenseDetail] = useState({
     shipment: 0,
     gaji: 0,
     lain: 0
   });
+
   const [monthlyChart, setMonthlyChart] = useState(null);
   const [expenseCategoryChart, setExpenseCategoryChart] = useState(null);
 
@@ -53,12 +60,27 @@ export default function Dashboard() {
   };
 
   const loadFinanceData = async () => {
-    const { data: invoices } = await supabase
+    // ✅ QUERY + FILTER
+    let invoiceQuery = supabase
       .from("invoices")
       .select("total,status,created_at");
-    const { data: expenses } = await supabase
+
+    let expenseQuery = supabase
       .from("expenses")
       .select("amount,category,shipment_id,created_at");
+
+    if (startDate && endDate) {
+      invoiceQuery = invoiceQuery
+        .gte("created_at", startDate)
+        .lte("created_at", endDate);
+
+      expenseQuery = expenseQuery
+        .gte("created_at", startDate)
+        .lte("created_at", endDate);
+    }
+
+    const { data: invoices } = await invoiceQuery;
+    const { data: expenses } = await expenseQuery;
 
     const paidInvoices = invoices?.filter(i => i.status === "Paid") || [];
     const revenue = paidInvoices.reduce((a, b) => a + Number(b.total), 0) || 0;
@@ -83,18 +105,22 @@ export default function Dashboard() {
       expenses: totalExpenses,
       profit
     });
+
     setExpenseDetail({
       shipment: shipmentExpenses,
       gaji: gajiExpenses,
       lain: otherExpenses
     });
 
+    // CHART BULANAN
     const monthlyData = {};
+
     paidInvoices.forEach(inv => {
       const month = inv.created_at.slice(0, 7);
       if (!monthlyData[month]) monthlyData[month] = { revenue: 0, expenses: 0 };
       monthlyData[month].revenue += Number(inv.total);
     });
+
     expenses?.forEach(exp => {
       const month = exp.created_at.slice(0, 7);
       if (!monthlyData[month]) monthlyData[month] = { revenue: 0, expenses: 0 };
@@ -105,6 +131,7 @@ export default function Dashboard() {
     const profitValues = labels.map(
       m => monthlyData[m].revenue - monthlyData[m].expenses
     );
+
     const profitColors = profitValues.map(v =>
       v >= 0 ? "#22c55e" : "#ef4444"
     );
@@ -121,7 +148,9 @@ export default function Dashboard() {
       ]
     });
 
+    // CHART KATEGORI
     const categoryData = {};
+
     expenses?.forEach(exp => {
       const kategori = exp.category || "Tidak ada kategori";
       if (!categoryData[kategori]) {
@@ -155,40 +184,99 @@ export default function Dashboard() {
     });
   };
 
-  const exportExcel = async () => {
-    const { data: invoices } = await supabase
+  // ✅ EXPORT IKUT FILTER
+const exportExcel = async () => {
+  try {
+    // =========================
+    // 1. QUERY DATA
+    // =========================
+    let invoiceQuery = supabase
       .from("invoices")
-      .select("total,status")
-      .eq("status", "Paid");
-    const { data: expenses } = await supabase
+      .select("total,status,created_at");
+
+    let expenseQuery = supabase
       .from("expenses")
-      .select("category,description,amount")
-      .order("category", { ascending: true });
+      .select("*")
+      .order("created_at", { ascending: false });
 
-    const totalRevenue = invoices?.reduce((a, b) => a + Number(b.total), 0) || 0;
-    const totalExpenses = expenses?.reduce((a, b) => a + Number(b.amount), 0) || 0;
+    // FILTER TANGGAL
+    if (startDate && endDate) {
+      invoiceQuery = invoiceQuery
+        .gte("created_at", startDate)
+        .lte("created_at", endDate);
 
+      expenseQuery = expenseQuery
+        .gte("created_at", startDate)
+        .lte("created_at", endDate);
+    }
+
+    const { data: invoices } = await invoiceQuery;
+    const { data: expenses, error } = await expenseQuery;
+
+    if (error) {
+      console.error("ERROR EXPORT:", error);
+      return;
+    }
+
+    if (!expenses || expenses.length === 0) {
+      alert("Tidak ada data untuk diexport");
+      return;
+    }
+
+    // =========================
+    // 2. HITUNG SUMMARY
+    // =========================
+    const paidInvoices = invoices?.filter(i => i.status === "Paid") || [];
+
+    const revenue =
+      paidInvoices.reduce((a, b) => a + Number(b.total), 0) || 0;
+
+    const totalExpenses =
+      expenses.reduce((a, b) => a + Number(b.amount), 0) || 0;
+
+    const profit = revenue - totalExpenses;
+
+    // =========================
+    // 3. FORMAT SUMMARY SHEET
+    // =========================
     const summaryData = [
-      { Keterangan: "Total Revenue", Nilai: totalRevenue },
+      { Keterangan: "Revenue", Nilai: revenue },
       { Keterangan: "Total Expenses", Nilai: totalExpenses },
-      { Keterangan: "Laba Bersih", Nilai: totalRevenue - totalExpenses }
+      { Keterangan: "Profit", Nilai: profit }
     ];
 
-    const detailExpenses = expenses.map(e => ({
-      Category: e.category,
-      Description: e.description,
-      Amount: e.amount
+    // =========================
+    // 4. FORMAT DETAIL SHEET
+    // =========================
+    const detailData = expenses.map((item, index) => ({
+      No: index + 1,
+      Tanggal: new Date(item.created_at).toLocaleDateString("id-ID"),
+      Category: item.category,
+      Description: item.description,
+      Amount: item.amount,
+      Shipment_ID: item.shipment_id || "-"
     }));
 
+    // =========================
+    // 5. CREATE EXCEL (2 SHEET)
+    // =========================
     const wb = XLSX.utils.book_new();
-    const wsSummary = XLSX.utils.json_to_sheet(summaryData);
-    const wsExpenses = XLSX.utils.json_to_sheet(detailExpenses);
-    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
-    XLSX.utils.book_append_sheet(wb, wsExpenses, "Expenses Detail");
-    XLSX.writeFile(wb, "Laporan_Keuangan_Layar_Timur.xlsx");
-  };
 
-  const chartOptions = {
+    const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+    const wsDetail = XLSX.utils.json_to_sheet(detailData);
+
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+    XLSX.utils.book_append_sheet(wb, wsDetail, "Expenses Detail");
+
+    XLSX.writeFile(wb, "Laporan_Keuangan_Filtered.xlsx");
+
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+
+const chartOptions = {
     responsive: true,
     plugins: {
       legend: { display: false },
@@ -216,6 +304,13 @@ export default function Dashboard() {
         <strong>Login:</strong> {userEmail}
       </p>
 
+      {/* ✅ FILTER */}
+      <div style={{ marginTop: 20, marginBottom: 10, display: "flex", gap: 10 }}>
+        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+        <button onClick={loadFinanceData}>Apply Filter</button>
+      </div>
+
       {/* NAVIGATION BUTTONS */}
       <div className="navButtons">
         <button onClick={() => router.push("/dashboard/shipments")}>📦 Shipments</button>
@@ -224,7 +319,7 @@ export default function Dashboard() {
         <button onClick={() => router.push("/dashboard/expenses/create")}>💸 Input Pengeluaran</button>
       </div>
 
-      {/* SUMMARY CARDS */}
+      {/* SUMMARY */}
       <div className="cardContainer">
         <Card title="Revenue" value={summary.revenue} />
         <Card title="Shipment Expense" value={expenseDetail.shipment} />
@@ -234,107 +329,34 @@ export default function Dashboard() {
         <Card title="Profit" value={summary.profit} highlight />
       </div>
 
-      {/* PAYROLL WIDGET */}
-      <div className="payrollWidget">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h3 style={{ margin: 0 }}>Payroll & Slip Gaji</h3>
-            <p style={{ color: '#64748b', fontSize: '14px', margin: '5px 0 0 0' }}>Manajemen penggajian karyawan otomatis.</p>
-          </div>
-          <button 
-            onClick={() => router.push('/dashboard/payroll/create')}
-            style={{ padding: '8px 16px', backgroundColor: '#1e293b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-          >
-            Buat Slip Gaji Baru
-          </button>
-        </div>
-      </div>
+<style jsx>{`
+  .cardContainer {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 20px;
+    margin-top: 30px;
+  }
+`}</style>
 
-      {/* CHARTS */}
+      {/* CHART */}
       <div className="chartContainer">
         {monthlyChart && <Bar data={monthlyChart} options={chartOptions} />}
       </div>
+
       <div className="chartContainer">
         {expenseCategoryChart && <Bar data={expenseCategoryChart} options={chartOptions} />}
       </div>
 
-      {/* FOOTER ACTIONS */}
+      {/* ACTION */}
       <div style={{ marginTop: 20, display: 'flex', gap: 15 }}>
-        <button
-          onClick={exportExcel}
-          style={{
-            padding: "10px 15px",
-            background: "#2563eb",
-            color: "white",
-            border: "none",
-            borderRadius: 6,
-            cursor: "pointer"
-          }}
-        >
-          📥 Export Excel Report
-        </button>
-
-        <button
-          onClick={async () => {
-            await supabase.auth.signOut();
-            router.push("/login");
-          }}
-          className="logoutBtn"
-        >
+        <button onClick={exportExcel}>📥 Export Excel Report</button>
+        <button onClick={async () => {
+          await supabase.auth.signOut();
+          router.push("/login");
+        }}>
           Logout
         </button>
       </div>
-
-      <style jsx>{`
-        .navButtons {
-          margin-top: 20px;
-          display: flex;
-          gap: 15px;
-          flex-wrap: wrap;
-        }
-        .navButtons button {
-          padding: 10px 15px;
-          border-radius: 8px;
-          border: 1px solid #e2e8f0;
-          background: white;
-          cursor: pointer;
-          font-weight: 600;
-          transition: all 0.2s;
-        }
-        .navButtons button:hover {
-          background: #f8fafc;
-          border-color: #cbd5e1;
-        }
-        .cardContainer {
-          display: flex;
-          gap: 20px;
-          margin-top: 30px;
-          flex-wrap: wrap;
-          width: 100%;
-        }
-        .payrollWidget {
-          margin-top: 30px;
-          padding: 20px;
-          background: #f1f5f9;
-          border-radius: 12px;
-          border: 1px solid #e2e8f0;
-        }
-        .chartContainer {
-          margin-top: 40px;
-          background: #fff;
-          padding: 20px;
-          border-radius: 10px;
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-        }
-        .logoutBtn {
-          padding: 10px 15px;
-          background: #dc2626;
-          color: white;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-        }
-      `}</style>
     </div>
   );
 }
