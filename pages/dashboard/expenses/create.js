@@ -132,8 +132,9 @@ export default function CreateExpense() {
           <option value="shipment">Operasional Shipment</option>
           <option value="gaji">Gaji Karyawan (Otomatisasi)</option>
           <option value="aset">Pembelian Aset</option>
+          <option value="sewa">Sewa Mobil</option>
           <option value="kasbon">Kasbon / Pinjaman Staf</option>
-          <option value="transfer">Transfer ke Mr. Tomsan</option>
+          <option value="transfer">Transfer ke Mr. Tomsan</option>	
           <option value="lain">Lain-lain</option>
         </select>
 
@@ -217,6 +218,15 @@ export default function CreateExpense() {
             </optgroup>
           )}
 
+{/* SEWA MOBIL */}
+{expenseType === "sewa" && (
+  <optgroup label="Biaya Sewa Kendaraan">
+    <option value="Sewa Mobil Harian">Sewa Mobil Harian</option>
+    <option value="Sewa Mobil Bulanan">Sewa Mobil Bulanan</option>
+    <option value="Sewa Mobil Tahunan">Sewa Mobil Tahunan</option>
+    <option value="Sewa Driver">Sewa Driver</option>
+  </optgroup>
+)}
           {/* UMUM */}
           <optgroup label="Umum & Lainnya">
             <option value="Kasbon">Kasbon</option>
