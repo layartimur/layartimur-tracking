@@ -11,16 +11,16 @@ export default function Tracking() {
   const [resi, setResi] = useState("");
   const [last4, setLast4] = useState("");
   const [data, setData] = useState(null);
-  const [items, setItems] = useState([]);
-  const [totalUnit, setTotalUnit] = useState(0);
+  const [items, setItems] = useState("");
+  const [totalBill, setTotalBill] = useState(0);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSearch = async () => {
     setError("");
     setData(null);
-    setItems([]);
-    setTotalUnit(0);
+    setItems("");
+    setTotalBill(0);
 
     if (!resi || !last4) {
       setError("Nomor resi dan 4 digit terakhir HP wajib diisi");
@@ -57,19 +57,29 @@ export default function Tracking() {
       return;
     }
 
-    // 🔥 AMBIL ITEMS
+    // 🔥 AMBIL ITEMS (UNTUK KETERANGAN SAJA)
     const { data: shipmentItems } = await supabase
       .from("shipment_items")
       .select("*")
       .eq("shipment_id", shipment.id);
 
-    const totalQty = shipmentItems?.reduce(
-      (sum, item) => sum + Number(item.qty || 0),
-      0
-    );
+    const keteranganList = shipmentItems
+      ?.map(item => item.keterangan)
+      .filter(Boolean);
 
-    setItems(shipmentItems || []);
-    setTotalUnit(totalQty || 0);
+    const keteranganText = keteranganList?.join(", ");
+
+    // 🔥 AMBIL TOTAL DARI INVOICES
+    const { data: invoice } = await supabase
+      .from("invoices")
+      .select("total")
+      .eq("shipment_id", shipment.id)
+      .single();
+
+    const total = invoice?.total || 0;
+
+    setItems(keteranganText || "");
+    setTotalBill(total);
     setData(shipment);
     setLoading(false);
   };
@@ -123,20 +133,17 @@ export default function Tracking() {
             <p><strong>Status:</strong> {data.status}</p>
             <p><strong>Berat:</strong> {data.weight} kg</p>
 
-            {/* 🔥 TOTAL UNIT BARU */}
-            <p><strong>Jumlah Unit:</strong> {totalUnit} unit</p>
-
-            {/* 🔥 DETAIL BARANG (OPTIONAL PREMIUM) */}
-            {items.length > 0 && (
+            {items && (
               <div style={{ marginTop:15 }}>
                 <strong>Detail Barang:</strong>
-                {items.map((item, index) => (
-                  <div key={index}>
-                    - {item.name} ({item.qty} {item.unit})
-                  </div>
-                ))}
+                <div>- {items}</div>
               </div>
             )}
+
+            <p style={{ marginTop:15 }}>
+              <strong>Total Penagihan:</strong>{" "}
+              Rp {Number(totalBill).toLocaleString("id-ID")}
+            </p>
 
             <div style={{ marginTop:30 }}>
               <h3>Progress Pengiriman</h3>
