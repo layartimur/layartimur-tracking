@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "../../utils/supabaseClient";
@@ -24,7 +25,6 @@ export default function Dashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [summary, setSummary] = useState({
     revenue: 0,
     expenses: 0,
@@ -159,172 +159,348 @@ export default function Dashboard() {
   const exportExcel = async () => {
     const { data: invoices } = await supabase
       .from("invoices")
-      .select("total,status")
+      .select("total,status,created_at")
       .eq("status", "Paid");
     const { data: expenses } = await supabase
       .from("expenses")
-      .select("category,description,amount")
-      .order("category", { ascending: true });
-
-    const totalRevenue = invoices?.reduce((a, b) => a + Number(b.total), 0) || 0;
-    const totalExpenses = expenses?.reduce((a, b) => a + Number(b.amount), 0) || 0;
+      .select("category,description,amount,created_at")
+      .order("created_at", { ascending: false });
 
     const summaryData = [
-      { Keterangan: "Total Revenue", Nilai: totalRevenue },
-      { Keterangan: "Total Expenses", Nilai: totalExpenses },
-      { Keterangan: "Laba Bersih", Nilai: totalRevenue - totalExpenses }
+      { Keterangan: "Total Revenue", Nilai: summary.revenue },
+      { Keterangan: "Total Expenses", Nilai: summary.expenses },
+      { Keterangan: "Laba Bersih", Nilai: summary.profit }
     ];
 
     const detailExpenses = expenses.map(e => ({
-      Category: e.category,
-      Description: e.description,
-      Amount: e.amount
+      'Tanggal Input': new Date(e.created_at).toLocaleDateString('id-ID'),
+      'Kategori': e.category,
+      'Keterangan': e.description,
+      'Jumlah': e.amount
+    }));
+
+    const detailInvoices = invoices.map(i => ({
+        'Tanggal Input': new Date(i.created_at).toLocaleDateString('id-ID'),
+        'Status': i.status,
+        'Total': i.total
     }));
 
     const wb = XLSX.utils.book_new();
     const wsSummary = XLSX.utils.json_to_sheet(summaryData);
     const wsExpenses = XLSX.utils.json_to_sheet(detailExpenses);
+    const wsInvoices = XLSX.utils.json_to_sheet(detailInvoices);
+    
     XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+    XLSX.utils.book_append_sheet(wb, wsInvoices, "Revenue Detail");
     XLSX.utils.book_append_sheet(wb, wsExpenses, "Expenses Detail");
-    XLSX.writeFile(wb, "Laporan_Keuangan_Layar_Timur.xlsx");
+    
+    XLSX.writeFile(wb, `Laporan_Keuangan_Layar_Timur_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            return "Rp " + context.raw.toLocaleString("id-ID");
+          }
+        }
+      }
+    },
+    animation: { duration: 800 },
+    scales: {
+      y: { 
+        grid: { color: "rgba(255, 255, 255, 0.1)" },
+        ticks: { color: "#fff" }
+      },
+      x: { 
+        grid: { display: false },
+        ticks: { color: "#fff" }
+      }
+    }
+  };
+
+  if (loading) return <div className="loadingContainer">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-sans">
-      {/* MOBILE HEADER */}
-      <div className="lg:hidden bg-[#0f172a] text-white p-4 flex justify-between items-center sticky top-0 z-50">
-        <h2 className="font-bold tracking-tight">Layar Timur Admin</h2>
-        <button onClick={() => setMenuOpen(!menuOpen)} className="p-2">
-          <span className="material-icons">{menuOpen ? 'close' : 'menu'}</span>
+    <div className="dashboardWrapper">
+      <header className="header">
+        <h1>🚛 Enterprise Dashboard</h1>
+        <p className="loginInfo">
+          <strong>Login:</strong> {userEmail}
+        </p>
+      </header>
+
+      {/* NAVIGATION BUTTONS */}
+      <nav className="navButtons">
+        <button onClick={() => router.push("/dashboard/shipments")}>📦 Shipments</button>
+        <button onClick={() => router.push("/dashboard/invoices")}>🧾 Invoices</button>
+        <button onClick={() => router.push("/dashboard/payroll")}>💳 Payroll & Gaji</button>
+        <button onClick={() => router.push("/dashboard/expenses/create")}>💸 Input Pengeluaran</button>
+      </nav>
+
+      {/* SUMMARY CARDS */}
+      <section className="cardGrid">
+        <Card title="Revenue" value={summary.revenue} />
+        <Card title="Shipment Expense" value={expenseDetail.shipment} />
+        <Card title="Gaji" value={expenseDetail.gaji} />
+        <Card title="Lain-lain" value={expenseDetail.lain} />
+        <Card title="Total Expenses" value={summary.expenses} />
+        <Card title="Net Profit" value={summary.profit} highlight />
+      </section>
+
+      {/* PAYROLL QUICK ACCESS */}
+      <section className="payrollWidget">
+        <div className="widgetHeader">
+          <div>
+            <h3>Payroll & Slip Gaji</h3>
+            <p>Manajemen penggajian karyawan otomatis.</p>
+          </div>
+          <button 
+            onClick={() => router.push('/dashboard/payroll/create')}
+            className="btnAction"
+          >
+            Buat Slip Gaji Baru
+          </button>
+        </div>
+      </section>
+
+      {/* CHARTS SECTION */}
+      <section className="chartsGrid">
+        <div className="chartBox">
+          <h3>Monthly Profit Trend</h3>
+          <div className="chartWrapper">
+            {monthlyChart && <Bar data={monthlyChart} options={chartOptions} />}
+          </div>
+        </div>
+        <div className="chartBox">
+          <h3>Expense Distribution</h3>
+          <div className="chartWrapper">
+            {expenseCategoryChart && <Bar data={expenseCategoryChart} options={chartOptions} />}
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER ACTIONS */}
+      <footer className="footerActions">
+        <button onClick={exportExcel} className="btnExport">
+          📥 Export Excel Report
         </button>
-      </div>
 
-      <div className="flex">
-        {/* SIDEBAR */}
-        <aside className={`fixed lg:static inset-y-0 left-0 w-64 bg-[#0f172a] text-white transform ${menuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 z-40 lg:h-screen p-6 flex flex-col`}>
-          <div className="hidden lg:block mb-10">
-            <h2 className="text-xl font-bold tracking-tighter">Layar Timur Express</h2>
-            <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">Enterprise Admin Portal</p>
-          </div>
-          
-          <nav className="space-y-2 flex-1">
-            <NavItem icon="dashboard" label="Dashboard" active onClick={() => { router.push("/dashboard"); setMenuOpen(false); }} />
-            <NavItem icon="inventory_2" label="Shipments" onClick={() => { router.push("/dashboard/shipments"); setMenuOpen(false); }} />
-            <NavItem icon="receipt_long" label="Invoices" onClick={() => { router.push("/dashboard/invoices"); setMenuOpen(false); }} />
-            <NavItem icon="payments" label="Payroll" onClick={() => { router.push("/dashboard/payroll"); setMenuOpen(false); }} />
-            <NavItem icon="add_circle" label="Input Pengeluaran" onClick={() => { router.push("/dashboard/expenses/create"); setMenuOpen(false); }} />
-          </nav>
+        <button
+          onClick={async () => {
+            await supabase.auth.signOut();
+            router.push("/login");
+          }}
+          className="btnLogout"
+        >
+          Logout
+        </button>
+      </footer>
 
-          <div className="pt-6 border-t border-white/10">
-            <p className="text-[10px] text-white/40 mb-4 truncate">{userEmail}</p>
-            <button 
-              onClick={async () => { await supabase.auth.signOut(); router.push("/login"); }}
-              className="w-full py-3 bg-red-500/10 text-red-500 rounded-xl font-bold text-sm hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
-            >
-              <span className="material-icons text-sm">logout</span> Logout
-            </button>
-          </div>
-        </aside>
-
-        {/* OVERLAY FOR MOBILE SIDEBAR */}
-        {menuOpen && <div onClick={() => setMenuOpen(false)} className="fixed inset-0 bg-black/50 z-30 lg:hidden" />}
-
-        {/* MAIN CONTENT */}
-        <main className="flex-1 p-4 md:p-8 lg:p-12 overflow-x-hidden">
-          <header className="mb-10">
-            <h1 className="text-3xl font-black text-[#0f172a] tracking-tight">Financial Overview</h1>
-            <p className="text-slate-500 mt-1">Real-time logistics analytics and fiscal health summary.</p>
-          </header>
-
-          {/* SUMMARY CARDS GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            <SummaryCard title="Revenue" value={summary.revenue} />
-            <SummaryCard title="Total Expenses" value={summary.expenses} />
-            <SummaryCard title="Net Profit" value={summary.profit} highlight />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-            {/* CHART 1 */}
-            <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-              <h3 className="font-bold text-slate-800 mb-6">Monthly Profit Performance</h3>
-              <div className="h-[300px]">
-                {monthlyChart && <Bar data={monthlyChart} options={chartOptions} />}
-              </div>
-            </div>
-
-            {/* CHART 2 */}
-            <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-              <h3 className="font-bold text-slate-800 mb-6">Expense Distribution</h3>
-              <div className="h-[300px]">
-                {expenseCategoryChart && <Bar data={expenseCategoryChart} options={chartOptions} />}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4">
-            <button 
-              onClick={exportExcel}
-              className="px-8 py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            >
-              <span className="material-icons text-sm">download</span> Export XLSX Report
-            </button>
-          </div>
-        </main>
-      </div>
-
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
-        @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;900&display=swap');
+      <style jsx>{`
+        .dashboardWrapper {
+          padding: 20px;
+          min-h-screen: 100vh;
+          background: #0f172a;
+          color: white;
+          font-family: 'Public Sans', sans-serif;
+        }
+        @media (min-width: 768px) {
+          .dashboardWrapper {
+            padding: 40px;
+          }
+        }
+        .header {
+          margin-bottom: 30px;
+        }
+        .header h1 {
+          font-size: 1.875rem;
+          font-weight: 900;
+          letter-spacing: -0.05em;
+          margin: 0;
+        }
+        .loginInfo {
+          opacity: 0.6;
+          font-size: 0.875rem;
+          margin-top: 5px;
+        }
+        .navButtons {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          margin-bottom: 30px;
+        }
+        .navButtons button {
+          padding: 10px 16px;
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(255, 255, 255, 0.05);
+          color: white;
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 0.875rem;
+          transition: all 0.2s;
+        }
+        .navButtons button:hover {
+          background: rgba(255, 255, 255, 0.1);
+          transform: translateY(-2px);
+        }
+        .cardGrid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 20px;
+          margin-bottom: 30px;
+        }
+        .payrollWidget {
+          background: rgba(255, 255, 255, 0.03);
+          padding: 24px;
+          border-radius: 24px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          margin-bottom: 30px;
+        }
+        .widgetHeader {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 15px;
+        }
+        .widgetHeader h3 {
+          margin: 0;
+          font-weight: 800;
+        }
+        .widgetHeader p {
+          margin: 5px 0 0 0;
+          font-size: 0.875rem;
+          opacity: 0.5;
+        }
+        .btnAction {
+          padding: 10px 20px;
+          background: #3b82f6;
+          color: white;
+          border: none;
+          border-radius: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: 0.2s;
+        }
+        .btnAction:hover {
+          background: #2563eb;
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+        .chartsGrid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 30px;
+          margin-bottom: 40px;
+        }
+        .chartBox {
+          background: rgba(255, 255, 255, 0.02);
+          padding: 24px;
+          border-radius: 24px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .chartBox h3 {
+          font-size: 1rem;
+          font-weight: 700;
+          margin-bottom: 20px;
+          opacity: 0.8;
+        }
+        .chartWrapper {
+          height: 300px;
+          position: relative;
+        }
+        .footerActions {
+          display: flex;
+          gap: 15px;
+          flex-wrap: wrap;
+        }
+        .btnExport {
+          padding: 12px 24px;
+          background: #22c55e;
+          color: white;
+          border: none;
+          border-radius: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: 0.2s;
+        }
+        .btnExport:hover {
+          background: #16a34a;
+          box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+        }
+        .btnLogout {
+          padding: 12px 24px;
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          border-radius: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: 0.2s;
+        }
+        .btnLogout:hover {
+          background: #ef4444;
+          color: white;
+        }
+        .loadingContainer {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          background: #0f172a;
+          color: white;
+        }
       `}</style>
     </div>
   );
 }
 
-function NavItem({ icon, label, active, onClick }) {
+function Card({ title, value, highlight }) {
   return (
-    <button 
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active ? 'bg-blue-600 text-white font-bold shadow-lg shadow-blue-600/30' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-    >
-      <span className="material-icons text-sm">{icon}</span>
-      <span className="text-sm">{label}</span>
-    </button>
-  );
-}
-
-function SummaryCard({ title, value, highlight }) {
-  return (
-    <div className={`p-8 rounded-3xl border ${highlight ? 'bg-[#0f172a] text-white border-transparent shadow-2xl shadow-blue-900/40' : 'bg-white border-slate-200 text-slate-900 shadow-sm'}`}>
-      <p className={`text-[10px] font-black uppercase tracking-widest mb-3 ${highlight ? 'text-blue-400' : 'text-slate-400'}`}>{title}</p>
-      <div className="flex items-baseline gap-1">
-        <span className="text-lg font-bold opacity-60">Rp</span>
-        <h2 className="text-3xl font-black tracking-tighter truncate">
-          {value.toLocaleString('id-ID')}
-        </h2>
-      </div>
+    <div className={`card ${highlight ? 'highlight' : ''}`}>
+      <h4>{title}</h4>
+      <p className="value">Rp {value.toLocaleString('id-ID')}</p>
+      <style jsx>{`
+        .card {
+          padding: 24px;
+          border-radius: 24px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          transition: transform 0.2s;
+        }
+        .card:hover {
+          transform: translateY(-5px);
+          background: rgba(255, 255, 255, 0.05);
+        }
+        .card.highlight {
+          background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+          border: none;
+          box-shadow: 0 10px 30px rgba(22, 163, 74, 0.2);
+        }
+        h4 {
+          font-size: 0.75rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin: 0 0 10px 0;
+          opacity: 0.5;
+        }
+        .highlight h4 {
+          opacity: 0.8;
+          color: white;
+        }
+        .value {
+          font-size: 1.5rem;
+          font-weight: 900;
+          letter-spacing: -0.02em;
+          margin: 0;
+        }
+      `}</style>
     </div>
   );
 }
-
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      padding: 12,
-      backgroundColor: '#0f172a',
-      titleFont: { size: 14, weight: 'bold' },
-      bodyFont: { size: 13 },
-      callbacks: {
-        label: (context) => "Rp " + context.raw.toLocaleString("id-ID")
-      }
-    }
-  },
-  scales: {
-    y: { grid: { color: "#f1f5f9" }, ticks: { font: { family: 'Public Sans', size: 10 } } },
-    x: { grid: { display: false }, ticks: { font: { family: 'Public Sans', size: 10 } } }
-  }
-};
