@@ -233,7 +233,7 @@ export default function Dashboard() {
   return (
     <div className="dashboardWrapper">
       <header className="header">
-        <h1>🚛 Enterprise Dashboard</h1>
+        <h1>🚛 Admin Dashboard</h1>
         <p className="loginInfo"><strong>Login:</strong> {userEmail}</p>
       </header>
 
