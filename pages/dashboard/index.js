@@ -233,8 +233,15 @@ export default function Dashboard() {
   return (
     <div className="dashboardWrapper">
       <header className="header">
-        <h1>🚛 Admin Dashboard</h1>
-        <p className="loginInfo"><strong>Login:</strong> {userEmail}</p>
+        <div className="headerContainer">
+          <div>
+            <h1>🚛 Admin Dashboard</h1>
+            <p className="loginInfo"><strong>Login:</strong> {userEmail}</p>
+          </div>
+          <button onClick={async () => { await supabase.auth.signOut(); router.push("/login"); }} className="btnLogoutTop">
+            Logout
+          </button>
+        </div>
       </header>
 
       {/* DATE FILTER UI */}
@@ -279,15 +286,17 @@ export default function Dashboard() {
 
       <footer className="footerActions">
         <button onClick={exportExcel} className="btnExport">📥 Export Filtered XLSX Report</button>
-        <button onClick={async () => { await supabase.auth.signOut(); router.push("/login"); }} className="btnLogout">Logout</button>
       </footer>
 
       <style jsx>{`
         .dashboardWrapper { padding: 20px; min-height: 100vh; background: #0f172a; color: white; font-family: 'Public Sans', sans-serif; }
         @media (min-width: 768px) { .dashboardWrapper { padding: 40px; } }
         .header { margin-bottom: 30px; }
+        .headerContainer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
         .header h1 { font-size: 1.875rem; font-weight: 900; letter-spacing: -0.05em; margin: 0; }
         .loginInfo { opacity: 0.6; font-size: 0.875rem; margin-top: 5px; }
+        .btnLogoutTop { padding: 8px 16px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btnLogoutTop:hover { background: #ef4444; color: white; }
         
         .filterSection { display: flex; gap: 20px; align-items: flex-end; margin-bottom: 30px; flex-wrap: wrap; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
         .filterGroup { display: flex; flexDirection: column; gap: 8px; }

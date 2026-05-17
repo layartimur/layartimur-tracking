@@ -308,7 +308,9 @@ return(
 <div style={{
 display:"flex",
 justifyContent:"space-between",
-alignItems:"center"
+alignItems:"center",
+flexWrap: "wrap",
+gap: "15px"
 }}>
 
 <h1>Owner Executive Dashboard</h1>
