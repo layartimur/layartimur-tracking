@@ -32,6 +32,8 @@ unpaidInvoice:0
 const [chartData,setChartData] = useState([]);
 const [expenseData,setExpenseData] = useState([]);
 const [shipmentProfit,setShipmentProfit] = useState([]);
+const [activeTab, setActiveTab] = useState("overview");
+const [rawExpenses, setRawExpenses] = useState([]);
 
 const [fromDate,setFromDate] = useState("");
 const [toDate,setToDate] = useState("");
@@ -110,7 +112,8 @@ let invoiceQuery = supabase
 
 let expenseQuery = supabase
 .from("expenses")
-.select("amount,category,shipment_id,created_at");
+.select("id,amount,category,description,shipment_id,created_at,attachment_url")
+.order("created_at", { ascending: false });
 
 if(fromDate){
 invoiceQuery = invoiceQuery.gte("created_at", fromDate+"T00:00:00");
@@ -290,6 +293,7 @@ unpaidInvoice
 setChartData(finalChartData);
 setExpenseData(expenseCategoryData);
 setShipmentProfit(shipmentProfitData);
+setRawExpenses(expenses || []);
 
 setLoading(false);
 
@@ -348,6 +352,41 @@ Logout
 </div>
 
 </div>
+
+{/* TABS */}
+<div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+  <button
+    onClick={() => setActiveTab("overview")}
+    style={{
+      padding: "10px 20px",
+      borderRadius: "8px",
+      border: "none",
+      cursor: "pointer",
+      fontWeight: "bold",
+      background: activeTab === "overview" ? "#1e293b" : "#e2e8f0",
+      color: activeTab === "overview" ? "white" : "#475569"
+    }}
+  >
+    Overview
+  </button>
+  <button
+    onClick={() => setActiveTab("expenses")}
+    style={{
+      padding: "10px 20px",
+      borderRadius: "8px",
+      border: "none",
+      cursor: "pointer",
+      fontWeight: "bold",
+      background: activeTab === "expenses" ? "#1e293b" : "#e2e8f0",
+      color: activeTab === "expenses" ? "white" : "#475569"
+    }}
+  >
+    Daftar Pengeluaran & Bukti
+  </button>
+</div>
+
+{activeTab === "overview" && (
+  <>
 
 {/* DATE FILTER */}
 
@@ -488,6 +527,53 @@ color:"white"
 ))}
 
 </div>
+
+  </>
+)}
+
+{activeTab === "expenses" && (
+  <div>
+    <h2>Daftar Pengeluaran & Bukti Transfer</h2>
+    <div style={{ overflowX: "auto", marginTop: "20px", background: "white", borderRadius: "10px", padding: "20px", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", color: "#1e293b" }}>
+        <thead>
+          <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
+            <th style={{ padding: "12px" }}>Tanggal</th>
+            <th style={{ padding: "12px" }}>Kategori</th>
+            <th style={{ padding: "12px" }}>Keterangan</th>
+            <th style={{ padding: "12px" }}>Jumlah</th>
+            <th style={{ padding: "12px" }}>Bukti Lampiran</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rawExpenses.length === 0 ? (
+            <tr>
+              <td colSpan="5" style={{ padding: "15px", textAlign: "center", color: "#64748b" }}>Belum ada pengeluaran di periode ini.</td>
+            </tr>
+          ) : (
+            rawExpenses.map(exp => (
+              <tr key={exp.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                <td style={{ padding: "12px" }}>{new Date(exp.created_at).toLocaleDateString("id-ID")}</td>
+                <td style={{ padding: "12px" }}>{exp.category}</td>
+                <td style={{ padding: "12px" }}>{exp.description}</td>
+                <td style={{ padding: "12px", fontWeight: "bold" }}>Rp {Number(exp.amount).toLocaleString("id-ID")}</td>
+                <td style={{ padding: "12px" }}>
+                  {exp.attachment_url ? (
+                    <a href={exp.attachment_url} target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", textDecoration: "none", fontWeight: "bold" }}>
+                      Lihat Bukti
+                    </a>
+                  ) : (
+                    <span style={{ color: "#94a3b8" }}>-</span>
+                  )}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
 
 </div>
 
