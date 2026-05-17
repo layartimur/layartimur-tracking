@@ -13,7 +13,7 @@ export default function CreateShipment() {
 
   const [vehicles, setVehicles] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [customerType,setCustomerType] = useState("langganan");
+  const [customerType,setCustomerType] = useState("langganan_pt");
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -240,12 +240,13 @@ export default function CreateShipment() {
           onChange={(e)=>setCustomerType(e.target.value)}
         >
 
-          <option value="langganan">Customer Langganan</option>
+          <option value="langganan_pt">Customer Langganan (PT)</option>
+          <option value="langganan_individu">Customer Langganan (Individu)</option>
           <option value="umum">Customer Umum</option>
 
         </select>
 
-        {customerType === "langganan" ? (
+        {customerType.startsWith("langganan") ? (
 
           <select
             name="customer_name"
@@ -253,9 +254,17 @@ export default function CreateShipment() {
             onChange={handleCustomerSelect}
           >
 
-            <option value="">Pilih PT</option>
+            <option value="">
+              {customerType === "langganan_pt" ? "Pilih PT" : "Pilih Customer Individu"}
+            </option>
 
-            {customers.map((c,i)=>(
+            {customers
+              .filter(c => 
+                customerType === "langganan_pt" 
+                  ? c.nama_pt.toUpperCase().includes("PT") 
+                  : !c.nama_pt.toUpperCase().includes("PT")
+              )
+              .map((c,i)=>(
               <option key={i} value={c.nama_pt}>
                 {c.nama_pt}
               </option>
