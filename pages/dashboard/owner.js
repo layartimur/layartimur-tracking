@@ -102,6 +102,52 @@ XLSX.writeFile(wb,"Owner_Dashboard_Report.xlsx");
 
 };
 
+const handleUploadProof = async (e, expenseId) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (!confirm("Apakah Anda yakin ingin mengupload gambar ini sebagai bukti transfer?")) {
+    e.target.value = "";
+    return;
+  }
+
+  alert("Sedang mengupload, mohon tunggu...");
+  
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('attachments')
+      .upload(filePath, file);
+
+    if (uploadError) throw new Error(uploadError.message);
+
+    const { data: publicUrlData } = supabase.storage
+      .from('attachments')
+      .getPublicUrl(filePath);
+
+    const attachmentUrl = publicUrlData.publicUrl;
+
+    const { error: updateError } = await supabase
+      .from("expenses")
+      .update({ attachment_url: attachmentUrl })
+      .eq("id", expenseId);
+
+    if (updateError) throw new Error(updateError.message);
+
+    // Update state local agar langsung muncul tanpa refresh
+    setRawExpenses(prev => prev.map(exp => 
+      exp.id === expenseId ? { ...exp, attachment_url: attachmentUrl } : exp
+    ));
+    
+    alert("Berhasil! Bukti transfer telah ditambahkan.");
+  } catch (err) {
+    alert("Terjadi kesalahan: " + err.message);
+  }
+};
+
 const loadDashboard = async()=>{
 
 setLoading(true);
@@ -563,7 +609,26 @@ color:"white"
                       Lihat Bukti
                     </a>
                   ) : (
-                    <span style={{ color: "#94a3b8" }}>-</span>
+                    <div>
+                      <label 
+                        style={{ 
+                          fontSize: "12px", 
+                          background: "#e2e8f0", 
+                          padding: "6px 10px", 
+                          borderRadius: "4px", 
+                          cursor: "pointer",
+                          color: "#475569"
+                        }}
+                      >
+                        + Upload Bukti
+                        <input 
+                          type="file" 
+                          accept="image/*,.pdf" 
+                          style={{ display: "none" }} 
+                          onChange={(e) => handleUploadProof(e, exp.id)}
+                        />
+                      </label>
+                    </div>
                   )}
                 </td>
               </tr>
