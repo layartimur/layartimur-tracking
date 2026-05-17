@@ -19,7 +19,11 @@ export default function Shipments() {
   const loadData = async () => {
     const { data } = await supabase
       .from("shipments")
-      .select("*")
+      .select(`
+        *,
+        invoices ( total ),
+        expenses ( amount )
+      `)
       .order("created_at", { ascending: false });
 
     setData(data || []);
@@ -250,37 +254,51 @@ export default function Shipments() {
             <th>Customer</th>
             <th>Status</th>
             <th>SJ</th>
+            <th>Pendapatan</th>
+            <th>Pengeluaran</th>
+            <th>Profit</th>
             <th>PDF</th>
             <th>Aksi</th>
           </tr>
         </thead>
         <tbody>
-          {data.map((s) => (
-            <tr key={s.id}>
-              <td>{s.tracking_number}</td>
-              <td>{s.customer_name}</td>
-              <td>{s.status}</td>
-              <td>{s.sj_number || "-"}</td>
-              <td>
-                <button onClick={() => generatePDF(s)}>
-                  Download
-                </button>
-              </td>
-              <td>
-                {s.status === "Diproses" && (
-                  <button onClick={() => updateStatus(s.id, "Dikirim")}>
-                    Kirim
-                  </button>
-                )}
+          {data.map((s) => {
+            const income = s.invoices && s.invoices.length > 0 ? Number(s.invoices[0].total) : 0;
+            const expense = s.expenses ? s.expenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0) : 0;
+            const profit = income - expense;
 
-                {s.status === "Dikirim" && (
-                  <button onClick={() => updateStatus(s.id, "Sampai")}>
-                    Tandai Sampai
+            return (
+              <tr key={s.id}>
+                <td>{s.tracking_number}</td>
+                <td>{s.customer_name}</td>
+                <td>{s.status}</td>
+                <td>{s.sj_number || "-"}</td>
+                <td>Rp {income.toLocaleString("id-ID")}</td>
+                <td>Rp {expense.toLocaleString("id-ID")}</td>
+                <td style={{ fontWeight: "bold", color: profit >= 0 ? "#4ade80" : "#f87171" }}>
+                  Rp {profit.toLocaleString("id-ID")}
+                </td>
+                <td>
+                  <button onClick={() => generatePDF(s)}>
+                    Download
                   </button>
-                )}
-              </td>
-            </tr>
-          ))}
+                </td>
+                <td>
+                  {s.status === "Diproses" && (
+                    <button onClick={() => updateStatus(s.id, "Dikirim")}>
+                      Kirim
+                    </button>
+                  )}
+
+                  {s.status === "Dikirim" && (
+                    <button onClick={() => updateStatus(s.id, "Sampai")}>
+                      Tandai Sampai
+                    </button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

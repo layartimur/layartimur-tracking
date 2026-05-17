@@ -6,6 +6,7 @@ export default function CreateExpense() {
   const router = useRouter();
   const [shipments, setShipments] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [selectedShipments, setSelectedShipments] = useState([]);
   const [loading, setLoading] = useState(false);
   
   // JENIS PENGELUARAN
@@ -46,14 +47,22 @@ export default function CreateExpense() {
     });
   };
 
+  const handleShipmentCheck = (id) => {
+    if (selectedShipments.includes(id)) {
+      setSelectedShipments(selectedShipments.filter(sId => sId !== id));
+    } else {
+      setSelectedShipments([...selectedShipments, id]);
+    }
+  };
+
   const handleSubmit = async () => {
     // VALIDASI
     if (!form.amount || !form.category) {
       alert("Jumlah dan Kategori wajib diisi");
       return;
     }
-    if (expenseType === "shipment" && !form.shipment_id) {
-      alert("Shipment wajib dipilih untuk pengeluaran shipment");
+    if (expenseType === "shipment" && selectedShipments.length === 0) {
+      alert("Minimal satu Shipment wajib dipilih");
       return;
     }
     if (expenseType === "gaji" && !form.employee_id) {
@@ -65,17 +74,29 @@ export default function CreateExpense() {
 
     try {
       // 1. Simpan ke tabel Expenses
+      let inserts = [];
+      if (expenseType === "shipment") {
+        const splitAmount = Number(form.amount) / selectedShipments.length;
+        inserts = selectedShipments.map(id => ({
+          shipment_id: id,
+          employee_id: null,
+          description: form.description + (selectedShipments.length > 1 ? ` (Split ${selectedShipments.length} resi)` : ""),
+          amount: splitAmount,
+          category: form.category
+        }));
+      } else {
+        inserts = [{
+          shipment_id: null,
+          employee_id: expenseType === "gaji" ? form.employee_id : null,
+          description: form.description,
+          amount: Number(form.amount),
+          category: form.category
+        }];
+      }
+
       const { error: expenseError } = await supabase
         .from("expenses")
-        .insert([
-          {
-            shipment_id: expenseType === "shipment" ? form.shipment_id : null,
-            employee_id: expenseType === "gaji" ? form.employee_id : null,
-            description: form.description,
-            amount: Number(form.amount),
-            category: form.category
-          }
-        ]);
+        .insert(inserts);
 
       if (expenseError) throw expenseError;
 
@@ -141,20 +162,23 @@ export default function CreateExpense() {
         {/* PILIH SHIPMENT (KHUSUS SHIPMENT) */}
         {expenseType === "shipment" && (
           <>
-            <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Pilih Shipment</label>
-            <select
-              name="shipment_id"
-              value={form.shipment_id}
-              onChange={handleChange}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-            >
-              <option value="">-- Pilih Nomor SJ --</option>
+            <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Pilih Shipment (Bisa lebih dari 1)</label>
+            <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #cbd5e1', padding: '10px', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
               {shipments.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.tracking_number} - {s.customer_name}
-                </option>
+                <div key={s.id} style={{ marginBottom: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <input 
+                      type="checkbox" 
+                      value={s.id} 
+                      checked={selectedShipments.includes(s.id)}
+                      onChange={() => handleShipmentCheck(s.id)}
+                      style={{ marginRight: '8px' }}
+                    />
+                    {s.tracking_number} - {s.customer_name}
+                  </label>
+                </div>
               ))}
-            </select>
+            </div>
           </>
         )}
 
@@ -193,6 +217,7 @@ export default function CreateExpense() {
               <option value="Sopir">Uang Sopir</option>
               <option value="Tol">Biaya Tol</option>
               <option value="Bongkar">Bongkar Muat</option>
+              <option value="Sewa Mobil">Sewa Mobil</option>
             </optgroup>
           )}
 
