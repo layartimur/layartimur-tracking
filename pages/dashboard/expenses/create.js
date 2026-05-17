@@ -7,7 +7,11 @@ export default function CreateExpense() {
   const [shipments, setShipments] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [selectedShipments, setSelectedShipments] = useState([]);
+  const [activeKasbons, setActiveKasbons] = useState([]);
+  const [selectedKasbons, setSelectedKasbons] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [file, setFile] = useState(null);
+  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
   
   // JENIS PENGELUARAN
   const [expenseType, setExpenseType] = useState("shipment");
@@ -22,6 +26,7 @@ export default function CreateExpense() {
   useEffect(() => {
     loadShipments();
     loadEmployees();
+    loadKasbons();
   }, []);
 
   const loadShipments = async () => {
@@ -40,6 +45,16 @@ export default function CreateExpense() {
     setEmployees(data || []);
   };
 
+  const loadKasbons = async () => {
+    const { data } = await supabase
+      .from("expenses")
+      .select("id, description, amount, created_at")
+      .eq("category", "Kasbon")
+      .eq("status", "Belum Lunas")
+      .order("created_at", { ascending: false });
+    setActiveKasbons(data || []);
+  };
+
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -55,6 +70,20 @@ export default function CreateExpense() {
     }
   };
 
+  const handleKasbonCheck = (id) => {
+    if (selectedKasbons.includes(id)) {
+      setSelectedKasbons(selectedKasbons.filter(kId => kId !== id));
+    } else {
+      setSelectedKasbons([...selectedKasbons, id]);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async () => {
     // VALIDASI
     if (!form.amount || !form.category) {
@@ -65,6 +94,10 @@ export default function CreateExpense() {
       alert("Minimal satu Shipment wajib dipilih");
       return;
     }
+    if (expenseType === "pelunasan" && selectedKasbons.length === 0) {
+      alert("Minimal satu Kasbon Aktif wajib dipilih untuk dilunasi");
+      return;
+    }
     if (expenseType === "gaji" && !form.employee_id) {
       alert("Karyawan wajib dipilih untuk pengeluaran gaji");
       return;
@@ -73,24 +106,68 @@ export default function CreateExpense() {
     setLoading(true);
 
     try {
+      // 0. Upload file (jika ada)
+      let attachmentUrl = null;
+      if (file) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('attachments')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          throw new Error("Gagal mengupload gambar: " + uploadError.message);
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('attachments')
+          .getPublicUrl(filePath);
+
+        attachmentUrl = publicUrlData.publicUrl;
+      }
+
       // 1. Simpan ke tabel Expenses
       let inserts = [];
+      let finalAmount = Number(form.amount);
+
+      // Hitung total potongan kasbon jika ada
+      let kasbonDeduction = 0;
+      if (selectedKasbons.length > 0) {
+        kasbonDeduction = activeKasbons
+          .filter(k => selectedKasbons.includes(k.id))
+          .reduce((sum, k) => sum + Number(k.amount), 0);
+      }
+
+      if (expenseType === "pelunasan") {
+        finalAmount = -Math.abs(Number(form.amount));
+      } else if (expenseType === "gaji" && kasbonDeduction > 0) {
+        finalAmount = Number(form.amount) - kasbonDeduction;
+      }
+
       if (expenseType === "shipment") {
-        const splitAmount = Number(form.amount) / selectedShipments.length;
+        const splitAmount = finalAmount / selectedShipments.length;
         inserts = selectedShipments.map(id => ({
           shipment_id: id,
           employee_id: null,
           description: form.description + (selectedShipments.length > 1 ? ` (Split ${selectedShipments.length} resi)` : ""),
           amount: splitAmount,
-          category: form.category
+          category: form.category,
+          attachment_url: attachmentUrl,
+          status: expenseType === 'kasbon' ? 'Belum Lunas' : null,
+          created_at: new Date(expenseDate).toISOString()
         }));
       } else {
         inserts = [{
           shipment_id: null,
           employee_id: expenseType === "gaji" ? form.employee_id : null,
-          description: form.description,
-          amount: Number(form.amount),
-          category: form.category
+          description: form.description + (kasbonDeduction > 0 ? ` (Potong Kasbon Rp ${kasbonDeduction.toLocaleString()})` : ""),
+          amount: finalAmount,
+          category: form.category,
+          attachment_url: attachmentUrl,
+          status: expenseType === 'kasbon' ? 'Belum Lunas' : null,
+          created_at: new Date(expenseDate).toISOString()
         }];
       }
 
@@ -100,11 +177,21 @@ export default function CreateExpense() {
 
       if (expenseError) throw expenseError;
 
+      // Update status kasbon yang dipilih jadi Lunas
+      if ((expenseType === "pelunasan" || expenseType === "gaji") && selectedKasbons.length > 0) {
+        const { error: updateError } = await supabase
+          .from("expenses")
+          .update({ status: 'Lunas' })
+          .in('id', selectedKasbons);
+          
+        if (updateError) throw updateError;
+      }
+
       // 2. OTOMATISASI: Buat Draf Slip Gaji jika jenisnya Gaji
       if (expenseType === "gaji" && form.employee_id) {
-        const now = new Date();
+        const dateObj = new Date(expenseDate);
         const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-        const currentPeriod = `${months[now.getMonth()]} ${now.getFullYear()}`;
+        const currentPeriod = `${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
 
         const { error: payrollError } = await supabase
           .from("payrolls")
@@ -113,7 +200,8 @@ export default function CreateExpense() {
               employee_id: form.employee_id,
               period: currentPeriod,
               basic_salary: Number(form.amount),
-              status: "Draft"
+              status: "Draft",
+              created_at: new Date(expenseDate).toISOString()
             }
           ]);
         
@@ -143,6 +231,15 @@ export default function CreateExpense() {
           maxWidth: 450
         }}
       >
+        {/* TANGGAL TRANSAKSI */}
+        <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Tanggal Transaksi (Bisa dimundurkan)</label>
+        <input
+          type="date"
+          value={expenseDate}
+          onChange={(e) => setExpenseDate(e.target.value)}
+          style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+        />
+
         {/* JENIS PENGELUARAN */}
         <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Klasifikasi Pengeluaran</label>
         <select
@@ -154,7 +251,8 @@ export default function CreateExpense() {
           <option value="gaji">Gaji Karyawan (Otomatisasi)</option>
           <option value="aset">Pembelian Aset</option>
           <option value="sewa">Sewa Mobil</option>
-          <option value="kasbon">Kasbon / Pinjaman Staf</option>
+          <option value="kasbon">Kasbon / Pinjaman (Staf & Pihak Luar)</option>
+          <option value="pelunasan">Pelunasan Kasbon Pihak Luar (Uang Masuk)</option>
           <option value="transfer">Transfer ke Mr. Tomsan</option>
           <option value="lain">Lain-lain</option>
         </select>
@@ -199,6 +297,35 @@ export default function CreateExpense() {
             </select>
           </>
         )}
+
+        {/* PILIH KASBON (KHUSUS PELUNASAN / GAJI) */}
+        {(expenseType === "pelunasan" || expenseType === "gaji") && (
+          <>
+            <label style={{ fontSize: '14px', fontWeight: 'bold' }}>
+               {expenseType === "gaji" ? "Potong Kasbon (Pilih kasbon jika ada)" : "Pilih Kasbon yang Dilunasi"}
+            </label>
+            <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #cbd5e1', padding: '10px', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
+              {activeKasbons.length === 0 ? (
+                <div style={{ fontSize: '13px', color: '#64748b' }}>Tidak ada kasbon aktif.</div>
+              ) : activeKasbons.map(k => (
+                <div key={k.id} style={{ marginBottom: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <input 
+                      type="checkbox" 
+                      value={k.id} 
+                      checked={selectedKasbons.includes(k.id)}
+                      onChange={() => handleKasbonCheck(k.id)}
+                      style={{ marginRight: '8px' }}
+                    />
+                    {k.description} (Rp {k.amount.toLocaleString()}) - {new Date(k.created_at).toLocaleDateString()}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+
 
         {/* KATEGORI */}
         <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Kategori Akuntansi</label>
@@ -255,7 +382,8 @@ export default function CreateExpense() {
 
           {/* UMUM */}
           <optgroup label="Umum & Lainnya">
-            <option value="Kasbon">Kasbon</option>
+            <option value="Kasbon">Kasbon (Uang Keluar)</option>
+            <option value="Pelunasan Kasbon">Pelunasan Kasbon (Uang Masuk)</option>
             <option value="Admin">Biaya Admin Kantor</option>
             <option value="Operasional">Operasional Umum</option>
             <option value="Transfer Mr. Tomsan">Transfer ke Mr. Tomsan</option>
@@ -283,6 +411,15 @@ export default function CreateExpense() {
           value={form.amount}
           onChange={handleChange}
           style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+        />
+
+        {/* LAMPIRAN (BUKTI TRANSFER) */}
+        <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Lampiran / Bukti Transfer (Opsional)</label>
+        <input
+          type="file"
+          accept="image/*,.pdf"
+          onChange={handleFileChange}
+          style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff' }}
         />
 
         {/* BUTTONS */}
